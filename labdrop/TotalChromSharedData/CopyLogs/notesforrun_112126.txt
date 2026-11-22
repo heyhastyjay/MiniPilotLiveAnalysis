@@ -1,0 +1,2 @@
+we accidentally didnt fill the entire reactor system by bybassing the flow meter, so the reactor was slowly fillnig up with only the 300sccm flow rate while we were takling to devinder. so technically we only hit run variables around 2pm ish
+this is the 2:1 hydrogen/co syngas tank for feed gas. we also used the 2:1 syngas for calibration and used the simulated mixed gas also for calibration for this run. 

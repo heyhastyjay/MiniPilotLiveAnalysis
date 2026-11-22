@@ -1,0 +1,7 @@
+trend server http://127.0.0.1:8765/
+Exception calling "BuildJson" with "0" argument(s): "The process cannot access the file 'C:\LabDrop\SpecViewShareddata\Copy Logs\livelog.csv' because it is being used by another process."
+Exception calling "BuildJson" with "0" argument(s): "The process cannot access the file 'C:\LabDrop\ColePalmerSharedData\flowlog-2026-11-21_124024.log' because it is being used by another process."
+Exception calling "BuildJson" with "0" argument(s): "Access to the path 'C:\LabDrop\SpecViewShareddata\Copy Logs\26_324.LOG' is denied."
+Exception calling "BuildJson" with "0" argument(s): "Access to the path 'C:\LabDrop\ColePalmerSharedData\flowlog-2026-11-21_124024.log' is denied."
+Exception calling "BuildJson" with "0" argument(s): "Could not find file 'C:\LabDrop\SpecViewShareddata\Copy Logs\26_324.LOG'."
+Exception calling "BuildJson" with "0" argument(s): "Access to the path 'C:\LabDrop\ColePalmerSharedData\flowlog-2026-11-21_124024.log' is denied."

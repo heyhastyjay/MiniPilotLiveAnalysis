@@ -1,0 +1,6 @@
+many calibration runs of the pure simulated feed gas, then switched to pure co2 for calibration run. 
+switched midway raw totalchrome datafile_015 around 1:26pm from co2 to the product gas stream. 
+noticed the temperature was around 270C around 1:20pm
+turned off gc continuous button 1:47, noticed that cole palmer wasnt logging right before that and turned the reactor off. 
+
+we fixed cole palmer and restarted at 2:10pm

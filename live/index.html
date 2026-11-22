@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mini pilot process trend</title>
+<style>
+  :root {
+    --bg: #0c0a09;
+    --ink: #fafaf9;
+    --muted: #a8a29e;
+    --line: #44403c;
+    --panel: #1c1917;
+    --grid: #292524;
+    --accent: #fdba74;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 14px/1.4 "Segoe UI", sans-serif;
+    padding-bottom: 72px;
+  }
+  header {
+    padding: 14px 28px 8px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+  }
+  .logo {
+    grid-column: 2;
+    height: 96px;
+    width: auto;
+    justify-self: center;
+    display: block;
+  }
+  .titleblock {
+    grid-column: 1;
+    justify-self: start;
+    text-align: left;
+    min-width: 0;
+  }
+  .ranges { grid-column: 3; justify-self: end; align-self: center; }
+  .tabs { display: flex; gap: 6px; padding: 0 28px 8px; }
+  #cal { padding: 4px 28px 28px; max-width: 1100px; }
+  #cal h2 {
+    margin: 22px 0 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+  #cal h2:first-child { margin-top: 4px; padding-top: 0; border-top: 0; }
+  .cal-note { color: var(--muted); margin: 0 0 10px; }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr 1fr;
+    gap: 8px 12px;
+    align-items: center;
+    max-width: 520px;
+  }
+  .cal-grid.k { grid-template-columns: 80px 1fr; max-width: 280px; }
+  #feed-extras { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; max-width: 420px; }
+  #feed-extras:empty { display: none; }
+  .feed-extra { display: grid; grid-template-columns: 1fr 120px auto; gap: 8px; align-items: center; }
+  #feed-add { margin-top: 10px; }
+  table.k-table {
+    border-collapse: collapse;
+    margin-top: 8px;
+    min-width: 420px;
+  }
+  table.k-table th, table.k-table td {
+    border-bottom: 1px solid var(--line);
+    padding: 8px 16px;
+    text-align: left;
+  }
+  table.k-table th { color: var(--ink); font-weight: 600; }
+  table.k-table td:nth-child(n+2), table.k-table th:nth-child(n+2) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .sheet {
+    display: flex;
+    gap: 48px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  label.field { color: var(--muted); }
+  input[type="text"], input[type="number"], select {
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+    font: inherit;
+    width: 100%;
+  }
+  .warn {
+    color: #fecaca;
+    background: #451a1a;
+    border: 1px solid #7f1d1d;
+    padding: 8px 10px;
+    margin-top: 8px;
+  }
+  .var-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  .cal-grid.k.run-name-row { max-width: 460px; }
+  .run-file { display: flex; align-items: center; gap: 6px; }
+  .run-file input { flex: 1; min-width: 0; }
+  .json-ext { color: var(--muted); }
+  .var-actions select { width: auto; min-width: 280px; }
+  select option { background: #1c1917; color: #fafaf9; }
+  #var-status { color: var(--muted); margin-top: 8px; }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--bg);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  h1 { font-size: 22px; font-weight: 600; margin: 0; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin-top: 4px; }
+  .live-dot {
+    position: relative;
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    vertical-align: 1px;
+    background:
+      radial-gradient(circle at 32% 28%, #ffffff 0%, #bbf7d0 22%, #4ade80 48%, #16a34a 78%, #14532d 100%);
+    box-shadow: 0 0 6px 1px rgba(74, 222, 128, 0.55);
+  }
+  .live-dot::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(187, 247, 208, 0.7) 0%, rgba(74, 222, 128, 0.25) 42%, rgba(74, 222, 128, 0) 70%);
+    animation: pulse 2.4s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+    will-change: transform, opacity;
+  }
+  @keyframes pulse {
+    0% { transform: scale(0.72); opacity: 0.35; }
+    50% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(0.72); opacity: 0.35; }
+  }
+  .ranges { display: flex; gap: 6px; }
+  button {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    padding: 6px 10px;
+    font: inherit;
+    cursor: pointer;
+  }
+  button.on { background: var(--ink); color: #1c1917; border-color: var(--ink); }
+  main { padding: 8px 28px 32px; }
+  section { margin-top: 18px; }
+  .chart-head { display: flex; justify-content: flex-start; gap: 12px; align-items: center; }
+  .unit-toggle { display: flex; }
+  .unit-toggle button { padding: 2px 8px; font-size: 12px; }
+  h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 6px 0 4px; }
+  .legend button {
+    border: 0;
+    padding: 0;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .legend button { color: var(--ink); }
+  .legend button.off { opacity: 0.35; }
+  .swatch { width: 16px; height: 0; border-top: 2px solid; display: inline-block; }
+  .swatch.dash { border-top-style: dashed; }
+  canvas { width: 100%; height: 220px; background: var(--panel); display: block; }
+  .readout {
+    min-height: 1.2em;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  footer { color: var(--muted); font-size: 12px; padding: 4px 28px 4px; }
+  .credit {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 6;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+    text-align: center;
+    padding: 8px 28px;
+  }
+  .window { padding: 10px 28px 0; }
+  .window-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 2px;
+  }
+  .window-sliders { position: relative; height: 28px; }
+  .window-track, .window-fill {
+    position: absolute;
+    left: 0;
+    top: 12px;
+    height: 4px;
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .window-track { right: 0; background: var(--line); }
+  .window-fill { background: var(--accent); }
+  .window-sliders input[type="range"] {
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    margin: 0;
+    background: none;
+    pointer-events: none;
+    appearance: none;
+  }
+  .window-sliders input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    background: transparent;
+  }
+  .window-sliders input[type="range"]::-webkit-slider-thumb {
+    pointer-events: auto;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid #1c1917;
+    cursor: grab;
+  }
+  .window-sliders input[type="range"]::-moz-range-track { height: 4px; background: transparent; }
+  .window-sliders input[type="range"]::-moz-range-thumb {
+    pointer-events: auto;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--ink);
+    border: 2px solid #1c1917;
+    cursor: grab;
+  }
+</style>
+</head>
+<body>
+<div class="topbar">
+<header>
+  <img class="logo" src="/igit.png" alt="Stony Brook University Institute of Gas Innovation and Technology">
+  <div class="titleblock">
+    <h1>Mini pilot process trend</h1>
+    <div class="sub" id="sub"><span class="live-dot" hidden></span><span id="sub-text">Loading today’s run…</span></div>
+  </div>
+  <div class="ranges" id="ranges">
+    <button data-range="run">Full run</button>
+    <button data-range="60" class="on">Last hour</button>
+  </div>
+</header>
+<div class="tabs">
+  <button type="button" id="tab-trend" class="on">Trend</button>
+  <button type="button" id="tab-cal">Calibration / inputs</button>
+</div>
+<div class="window" id="window">
+  <div class="window-labels">
+    <span id="win-start">Start</span>
+    <span id="win-end">End</span>
+  </div>
+  <div class="window-sliders">
+    <div class="window-track"></div>
+    <div class="window-fill" id="win-fill"></div>
+    <input id="win-a" type="range" min="0" max="1" value="0" aria-label="Window start">
+    <input id="win-b" type="range" min="0" max="1" value="1" aria-label="Window end">
+  </div>
+</div>
+</div>
+<main id="charts"></main>
+<footer id="foot"></footer>
+<section id="cal" hidden>
+  <h2>Feed gas composition</h2>
+  <p class="cal-note">Volume %. The total is checked against 100%.</p>
+  <div class="cal-grid k">
+    <span>H2</span><input id="feed-h2" type="number" step="any" value="66.67" aria-label="Feed H2 percent">
+    <span>CO</span><input id="feed-co" type="number" step="any" value="33.33" aria-label="Feed CO percent">
+    <span>CO2</span><input id="feed-co2" type="number" step="any" value="0" aria-label="Feed CO2 percent">
+    <span>CH4</span><input id="feed-ch4" type="number" step="any" value="0" aria-label="Feed methane percent">
+    <span>N2</span><input id="feed-n2" type="number" step="any" value="0" aria-label="Feed N2 percent">
+  </div>
+  <div id="feed-extras"></div>
+  <button type="button" id="feed-add">+ add gas</button>
+  <p id="feed-total" class="cal-note">Total —</p>
+  <p id="feed-warn" class="warn" hidden>Feed gas is over 100%.</p>
+
+  <h2>Calibration curve</h2>
+  <p class="cal-note">Trend line y = mx + b, with peak area as y and gas % as x. Gas % = (peak area − b) / m.</p>
+  <div class="cal-grid">
+    <span></span><span class="field">slope (m)</span><span class="field">intercept (y)</span>
+    <span>Carbon monoxide</span>
+    <input id="cal-co-m" type="number" step="any" value="182957" aria-label="CO slope (m)">
+    <input id="cal-co-b" type="number" step="any" value="640679" aria-label="CO intercept (y)">
+    <span>Carbon dioxide</span>
+    <input id="cal-co2-m" type="number" step="any" value="230463" aria-label="CO2 slope (m)">
+    <input id="cal-co2-b" type="number" step="any" value="2399" aria-label="CO2 intercept (y)">
+    <span>Methane</span>
+    <input id="cal-ch4-m" type="number" step="any" value="135976" aria-label="Methane slope (m)">
+    <input id="cal-ch4-b" type="number" step="any" value="6787" aria-label="Methane intercept (y)">
+    <span>Hydrogen</span>
+    <input id="cal-h2-m" type="number" step="any" value="175954" aria-label="Hydrogen slope (m)">
+    <input id="cal-h2-b" type="number" step="any" value="498039" aria-label="Hydrogen intercept (y)">
+  </div>
+
+  <h2>Flow meter K values</h2>
+  <p class="cal-note">The two Brooks meters are the dual feed, side by side. One is calibrated on N2 and the other on H2. These K values are fixed.</p>
+  <table class="k-table">
+    <thead>
+      <tr><th>Gas</th><th>N2 Brooks</th><th>H2 Brooks</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Hydrogen</td><td>1.008</td><td>1.000</td></tr>
+      <tr><td>Carbon monoxide</td><td>0.995</td><td>0.987</td></tr>
+      <tr><td>Carbon dioxide</td><td>0.773</td><td>0.767</td></tr>
+      <tr><td>Methane</td><td>0.763</td><td>0.757</td></tr>
+      <tr><td>Nitrogen</td><td>1.000</td><td>0.992</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Run variables</h2>
+  <p class="cal-note">Saved in C:\LabDrop\livedashboardvariables.</p>
+  <div class="cal-grid k run-name-row">
+    <span>Run name</span>
+    <div class="run-file">
+      <input id="run-name" type="text" placeholder="run-variables" aria-label="Run name">
+      <span class="json-ext">.json</span>
+    </div>
+  </div>
+  <div class="var-actions">
+    <button type="button" id="var-save">Save run variables</button>
+    <button type="button" id="var-save-as">Save to a different location</button>
+    <select id="var-list" aria-label="Saved run variables"><option value="">Saved files</option></select>
+    <button type="button" id="var-load">Load</button>
+    <button type="button" id="var-load-from">Load from a different location</button>
+  </div>
+  <p id="var-status"></p>
+  <div class="var-actions">
+    <button type="button" id="download-table">Download table</button>
+  </div>
+  <p class="cal-note">One row per GC injection. Product-gas cells are the median within 30 seconds. Reactor temperature, pressure, and inlet flow are the nearest SpecView sample. Gas % uses the calibration curve on this sheet, and a gas with no curve is written as peak area.</p>
+  <p id="table-status"></p>
+</section>
+<p class="credit">Developed by Dr. Julia Hasty for the Institute of Gas Innovation and Technology at the Advanced Energy Research and Technology Center. 2026</p>
+<script>
+const GROUPS = [
+  ["temp", "Temperature", "°C"],
+  ["pressure", "Pressure", ""],
+  ["gas", "Gas Flow", ""]
+];
+const PALETTE = ["#93c5fd", "#fdba74", "#5eead4", "#f9a8d4", "#bef264", "#d8b4fe", "#fde68a", "#7dd3fc", "#fda4af", "#e7e5e4"];
+const hidden = new Set();
+let data = null;
+let rangeKey = "60";
+let hoverX = null;
+let hoverGroup = null;
+let chartSig = "";
+let win0 = null;
+let win1 = null;
+let pinEnd = true;
+let flowUnit = "sccm";
+let pressUnit = "psi";
+const PSI_PER_BAR = 14.503773773;
+
+function parseLocal(s) {
+  const [d, t] = s.split("T");
+  const [y, m, da] = d.split("-").map(Number);
+  const [hh, mm, ss] = t.split(":").map(Number);
+  return new Date(y, m - 1, da, hh, mm, ss || 0);
+}
+function fmtTime(ms, withSeconds) {
+  const d = new Date(ms);
+  let h = d.getHours();
+  const ampm = h >= 12 ? "pm" : "am";
+  h = h % 12 || 12;
+  const p = (n) => String(n).padStart(2, "0");
+  const clock = h + ":" + p(d.getMinutes()) + (withSeconds ? ":" + p(d.getSeconds()) : "");
+  return clock + " " + ampm;
+}
+function fmtSlider(ms) {
+  const d = new Date(ms);
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return months[d.getMonth()] + " " + d.getDate() + ", " + fmtTime(ms);
+}
+function dataEndSec() {
+  return data.times[data.times.length - 1];
+}
+function setWindowFromKey() {
+  const end = dataEndSec();
+  const origin = parseLocal(data.start).getTime();
+  if (rangeKey === "live") win0 = Math.max(0, end - 10 * 60);
+  else if (rangeKey === "60") win0 = Math.max(0, end - 60 * 60);
+  else if (rangeKey === "run") {
+    const day = parseLocal(data.start);
+    day.setHours(14, 0, 0, 0);
+    win0 = Math.max(0, (day.getTime() - origin) / 1000);
+  } else win0 = Math.max(0, end - 10 * 60);
+  win1 = end;
+  pinEnd = true;
+}
+function syncSliders() {
+  const end = Math.max(1, dataEndSec());
+  const a = document.getElementById("win-a");
+  const b = document.getElementById("win-b");
+  a.max = end;
+  b.max = end;
+  a.value = win0;
+  b.value = win1;
+  const origin = parseLocal(data.start).getTime();
+  document.getElementById("win-start").textContent = fmtSlider(origin + win0 * 1000);
+  document.getElementById("win-end").textContent = fmtSlider(origin + win1 * 1000);
+  const fill = document.getElementById("win-fill");
+  fill.style.left = (win0 / end * 100) + "%";
+  fill.style.width = ((win1 - win0) / end * 100) + "%";
+}
+function viewBounds() {
+  const origin = parseLocal(data.start).getTime();
+  const end = dataEndSec();
+  if (win0 == null) setWindowFromKey();
+  if (pinEnd) win1 = end;
+  win0 = Math.max(0, Math.min(win0, end));
+  win1 = Math.max(0, Math.min(win1, end));
+  if (win1 - win0 < 30) win0 = Math.max(0, win1 - 30);
+  if (win0 > win1) win0 = Math.max(0, win1 - 30);
+  return [origin + win0 * 1000, origin + win1 * 1000];
+}
+function seriesIn(group) {
+  return data.series.filter((s) => effectiveGroup(s) === group);
+}
+function effectiveGroup(s) {
+  if (s.group === "inlet" || s.group === "flow") return "gas";
+  return s.group;
+}
+function shown(s, v) {
+  if (v == null) return null;
+  if (effectiveGroup(s) === "pressure") {
+    return pressUnit === "bar" ? v / PSI_PER_BAR : v;
+  }
+  if (effectiveGroup(s) !== "gas") return v;
+  const native = String(s.unit || "").toLowerCase();
+  if (native === flowUnit) return v;
+  if (native === "slpm" && flowUnit === "sccm") return v * 1000;
+  if (native === "sccm" && flowUnit === "slpm") return v / 1000;
+  return v;
+}
+function axisLabel(v) {
+  const a = Math.abs(v);
+  if (a >= 1e6) return (v / 1e6).toFixed(a >= 1e7 ? 0 : 1) + "M";
+  if (a >= 100) return v.toFixed(0);
+  if (a >= 10) return v.toFixed(1);
+  return v.toFixed(2);
+}
+const CARBON = [
+  ["co", "Carbon monoxide", "#93c5fd"],
+  ["co2", "Carbon dioxide", "#fdba74"],
+  ["ch4", "Methane", "#5eead4"]
+];
+function legendName(s) {
+  if (s.name === "Outlet mass flow") return "Outlet flow";
+  return s.name;
+}
+
+function drawCarbon(ctx, w, h, x0, x1, span, start) {
+  const pad = { l: 58, r: 16, t: 16, b: 28 };
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const series = CARBON.filter((c) => !hidden.has(c[1]));
+  const pts = data.injections.filter((j) => {
+    const ms = start + j.t * 1000;
+    return ms >= x0 && ms <= x1;
+  });
+  let lo = Infinity, hi = -Infinity;
+  pts.forEach((j) => {
+    series.forEach(([key]) => {
+      const y = j[key];
+      if (y == null) return;
+      if (y < lo) lo = y;
+      if (y > hi) hi = y;
+    });
+  });
+  lo = 0;
+  if (!isFinite(hi) || hi <= 0) hi = 1;
+  hi *= 1.08;
+  const X = (ms) => pad.l + ((ms - x0) / span) * iw;
+  const Y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * ih;
+  ctx.strokeStyle = "#44403c";
+  ctx.lineWidth = 1;
+  ctx.fillStyle = "#a8a29e";
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let g = 0; g <= 4; g++) {
+    const v = lo + (hi - lo) * (g / 4);
+    const y = Y(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    ctx.fillText(axisLabel(v), pad.l - 6, y);
+  }
+  const count = Math.max(1, series.length);
+  let minGap = iw;
+  for (let i = 1; i < pts.length; i++) {
+    const gap = Math.abs(X(start + pts[i].t * 1000) - X(start + pts[i - 1].t * 1000));
+    if (gap > 2 && gap < minGap) minGap = gap;
+  }
+  if (!isFinite(minGap) || pts.length < 2) minGap = 48;
+  const barW = Math.max(2, Math.min(18, (minGap * 0.72) / count));
+  const clusterW = barW * count;
+  const base = Y(0);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(pad.l, pad.t, iw, ih);
+  ctx.clip();
+  pts.forEach((j) => {
+    const cx = X(start + j.t * 1000);
+    series.forEach(([key, , color], si) => {
+      const y = j[key];
+      if (y == null) return;
+      const x = cx - clusterW / 2 + si * barW;
+      const top = Y(y);
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 0.4, top, Math.max(1, barW - 0.8), Math.max(0, base - top));
+    });
+  });
+  ctx.restore();
+  ctx.fillStyle = "#a8a29e";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  for (let g = 0; g <= 6; g++) {
+    const ms = x0 + span * (g / 6);
+    ctx.fillText(fmtTime(ms), X(ms), pad.t + ih + 8);
+  }
+  if (hoverX != null && hoverX >= x0 && hoverX <= x1) {
+    ctx.strokeStyle = "#fafaf9";
+    ctx.beginPath();
+    ctx.moveTo(X(hoverX), pad.t);
+    ctx.lineTo(X(hoverX), pad.t + ih);
+    ctx.stroke();
+  }
+}
+
+function draw() {
+  if (!data) return;
+  const start = parseLocal(data.start).getTime();
+  const [x0, x1] = viewBounds();
+  syncSliders();
+  const span = Math.max(1, x1 - x0);
+  document.querySelectorAll("section").forEach((section) => {
+    const canvas = section.querySelector("canvas");
+    const group = section.dataset.group;
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    if (group === "carbon") {
+      drawCarbon(ctx, w, h, x0, x1, span, start);
+      return;
+    }
+    const series = seriesIn(group).filter((s) => !hidden.has(s.name));
+    const pad = { l: 58, r: 16, t: 16, b: 28 };
+    const iw = w - pad.l - pad.r;
+    const ih = h - pad.t - pad.b;
+    let lo = Infinity, hi = -Infinity;
+    series.forEach((s) => {
+      for (let i = 0; i < data.times.length; i++) {
+        const ms = start + data.times[i] * 1000;
+        if (ms < x0 || ms > x1) continue;
+        const y = shown(s, s.y[i]);
+        if (y == null) continue;
+        if (y < lo) lo = y;
+        if (y > hi) hi = y;
+      }
+    });
+    if (!isFinite(lo)) { lo = 0; hi = 1; }
+    if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
+    const ypad = (hi - lo) * 0.06;
+    lo -= ypad; hi += ypad;
+    const X = (ms) => pad.l + ((ms - x0) / span) * iw;
+    const Y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * ih;
+
+    ctx.strokeStyle = "#44403c";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "#a8a29e";
+    ctx.font = "11px Segoe UI";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for (let g = 0; g <= 4; g++) {
+      const v = lo + (hi - lo) * (g / 4);
+      const y = Y(v);
+      ctx.beginPath();
+      ctx.moveTo(pad.l, y);
+      ctx.lineTo(w - pad.r, y);
+      ctx.stroke();
+      const label = axisLabel(v);
+      ctx.fillText(label, pad.l - 6, y);
+    }
+
+    ctx.strokeStyle = "rgba(253, 186, 116, 0.55)";
+    ctx.setLineDash([3, 3]);
+    data.injections.forEach((inj) => {
+      const ms = start + inj.t * 1000;
+      if (ms < x0 || ms > x1) return;
+      const x = X(ms);
+      ctx.beginPath();
+      ctx.moveTo(x, pad.t);
+      ctx.lineTo(x, pad.t + ih);
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    if (section.dataset.first) {
+      ctx.fillStyle = "#fdba74";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      let lastLabel = -999;
+      data.injections.forEach((inj) => {
+        const ms = start + inj.t * 1000;
+        if (ms < x0 || ms > x1) return;
+        const x = X(ms);
+        if (x - lastLabel < 18) return;
+        ctx.fillText(String(inj.n), x, pad.t + 11);
+        lastLabel = x;
+      });
+    }
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(pad.l, pad.t, iw, ih);
+    ctx.clip();
+    series.forEach((s) => {
+      ctx.strokeStyle = s.color;
+      ctx.lineWidth = 1.4;
+      ctx.setLineDash(s.dash ? [5, 4] : []);
+      ctx.beginPath();
+      let pen = false;
+      for (let i = 0; i < data.times.length; i++) {
+        const y = shown(s, s.y[i]);
+        const ms = start + data.times[i] * 1000;
+        if (y == null || ms < x0 - span || ms > x1 + span) { pen = false; continue; }
+        const px = X(ms), py = Y(y);
+        if (!pen) { ctx.moveTo(px, py); pen = true; }
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+      let tip = -1;
+      for (let i = data.times.length - 1; i >= 0; i--) {
+        const ms = start + data.times[i] * 1000;
+        if (ms > x1) continue;
+        if (ms < x0) break;
+        if (shown(s, s.y[i]) != null) { tip = i; break; }
+      }
+      if (tip >= 0) {
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(X(start + data.times[tip] * 1000), Y(shown(s, s.y[tip])), 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+    ctx.restore();
+
+    ctx.fillStyle = "#a8a29e";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const ticks = 6;
+    for (let g = 0; g <= ticks; g++) {
+      const ms = x0 + span * (g / ticks);
+      ctx.fillText(fmtTime(ms), X(ms), pad.t + ih + 8);
+    }
+
+    if (hoverX != null && hoverX >= x0 && hoverX <= x1) {
+      ctx.strokeStyle = "#fafaf9";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(X(hoverX), pad.t);
+      ctx.lineTo(X(hoverX), pad.t + ih);
+      ctx.stroke();
+    }
+  });
+}
+
+function nearestIndex(ms) {
+  const start = parseLocal(data.start).getTime();
+  const target = (ms - start) / 1000;
+  let lo = 0, hi = data.times.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (data.times[mid] < target) lo = mid + 1;
+    else hi = mid;
+  }
+  if (lo > 0 && Math.abs(data.times[lo - 1] - target) < Math.abs(data.times[lo] - target)) lo--;
+  return lo;
+}
+
+function readout(ms) {
+  const el = document.getElementById("foot");
+  if (ms == null) { el.textContent = "Drag the two handles to choose the start and end. Leave the end handle at the right edge and new samples keep plotting there."; return; }
+  const i = nearestIndex(ms);
+  const parts = [fmtTime(parseLocal(data.start).getTime() + data.times[i] * 1000)];
+  if (hoverGroup === "carbon") {
+    const inj = data.injections.find((j) => Math.abs(j.t - data.times[i]) < 30);
+    if (inj) {
+      parts.push("injection " + inj.n);
+      CARBON.forEach(([key, name]) => {
+        if (hidden.has(name) || inj[key] == null) return;
+        parts.push(name + " " + Math.round(inj[key]).toLocaleString());
+      });
+    }
+  } else {
+    data.series.forEach((s) => {
+      if (effectiveGroup(s) !== hoverGroup || hidden.has(s.name) || shown(s, s.y[i]) == null) return;
+      const y = shown(s, s.y[i]);
+      const unit = effectiveGroup(s) === "gas" ? " " + flowUnit.toUpperCase()
+        : effectiveGroup(s) === "pressure" ? " " + pressUnit
+        : (s.unit ? " " + s.unit : "");
+      const text = (Math.abs(y) >= 100 ? y.toFixed(0) : y.toFixed(2));
+      parts.push(legendName(s) + " " + text + unit);
+    });
+  }
+  el.textContent = parts.join("   ");
+}
+
+function render() {
+  const host = document.getElementById("charts");
+  const present = GROUPS.filter(([g]) => seriesIn(g).length);
+  host.innerHTML = "";
+  present.forEach(([g, title, unit], idx) => {
+    const section = document.createElement("section");
+    section.dataset.group = g;
+    if (idx === 0) section.dataset.first = "1";
+    if (idx === present.length - 1) section.dataset.last = "1";
+    const head = document.createElement("div");
+    head.className = "chart-head";
+    const h2 = document.createElement("h2");
+    h2.textContent = (g === "gas" || g === "pressure") ? title : (unit ? title + " (" + unit + ")" : title);
+    head.appendChild(h2);
+    if (g === "gas" || g === "pressure") {
+      const tog = document.createElement("div");
+      tog.className = "unit-toggle";
+      const choices = g === "gas" ? ["slpm", "sccm"] : ["psi", "bar"];
+      choices.forEach((u) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.textContent = u.toUpperCase();
+        const selected = g === "gas" ? flowUnit : pressUnit;
+        if (selected === u) b.classList.add("on");
+        b.onclick = () => {
+          if (g === "gas") flowUnit = u;
+          else pressUnit = u;
+          tog.querySelectorAll("button").forEach((x) => x.classList.toggle("on", x.textContent === u.toUpperCase()));
+          draw();
+        };
+        tog.appendChild(b);
+      });
+      head.appendChild(tog);
+    }
+    section.appendChild(head);
+    const legend = document.createElement("div");
+    legend.className = "legend";
+    seriesIn(g).forEach((s) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (hidden.has(s.name)) b.classList.add("off");
+      const sw = document.createElement("span");
+      sw.className = "swatch" + (s.dash ? " dash" : "");
+      sw.style.borderTopColor = s.color;
+      b.appendChild(sw);
+      b.appendChild(document.createTextNode(legendName(s)));
+      b.onclick = () => {
+        if (hidden.has(s.name)) hidden.delete(s.name);
+        else hidden.add(s.name);
+        render();
+      };
+      legend.appendChild(b);
+    });
+    section.appendChild(legend);
+    const canvas = document.createElement("canvas");
+    canvas.addEventListener("mousemove", (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const [x0, x1] = viewBounds();
+      const padL = 58, padR = 16;
+      const frac = (ev.clientX - rect.left - padL) / (rect.width - padL - padR);
+      hoverX = x0 + Math.min(1, Math.max(0, frac)) * (x1 - x0);
+      hoverGroup = section.dataset.group;
+      readout(hoverX);
+      draw();
+    });
+    canvas.addEventListener("mouseleave", () => { hoverX = null; hoverGroup = null; readout(null); draw(); });
+    section.appendChild(canvas);
+    host.appendChild(section);
+  });
+  if (data.injections.some((j) => j.co != null || j.co2 != null || j.ch4 != null)) {
+    const section = document.createElement("section");
+    section.dataset.group = "carbon";
+    const head = document.createElement("div");
+    head.className = "chart-head";
+    const h2 = document.createElement("h2");
+    h2.textContent = "Carbon peak area";
+    head.appendChild(h2);
+    section.appendChild(head);
+    const legend = document.createElement("div");
+    legend.className = "legend";
+    CARBON.forEach(([key, name, color]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      if (hidden.has(name)) b.classList.add("off");
+      const sw = document.createElement("span");
+      sw.className = "swatch";
+      sw.style.borderTopColor = color;
+      b.appendChild(sw);
+      b.appendChild(document.createTextNode(name));
+      b.onclick = () => {
+        if (hidden.has(name)) hidden.delete(name);
+        else hidden.add(name);
+        render();
+      };
+      legend.appendChild(b);
+    });
+    section.appendChild(legend);
+    const canvas = document.createElement("canvas");
+    canvas.addEventListener("mousemove", (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const [x0, x1] = viewBounds();
+      const padL = 58, padR = 16;
+      const frac = (ev.clientX - rect.left - padL) / (rect.width - padL - padR);
+      hoverX = x0 + Math.min(1, Math.max(0, frac)) * (x1 - x0);
+      hoverGroup = "carbon";
+      readout(hoverX);
+      draw();
+    });
+    canvas.addEventListener("mouseleave", () => { hoverX = null; hoverGroup = null; readout(null); draw(); });
+    section.appendChild(canvas);
+    host.appendChild(section);
+  }
+  draw();
+}
+
+function colorize() {
+  const count = {};
+  data.series.forEach((s) => {
+    const g = effectiveGroup(s);
+    const i = count[g] || 0;
+    count[g] = i + 1;
+    s.color = PALETTE[i % PALETTE.length];
+  });
+}
+
+function statusLine() {
+  const start = parseLocal(data.start);
+  const updated = parseLocal(data.updated);
+  document.querySelector("#sub .live-dot").hidden = false;
+  const following = rangeKey === "live" || rangeKey === "60" || rangeKey === "run";
+  document.getElementById("sub-text").textContent =
+    (following ? "Plotting new samples through " : "Plotted through ") +
+    fmtTime(updated.getTime(), true) + " (EST)" +
+    " · " + data.samples.toLocaleString() + " samples since " +
+    fmtTime(start.getTime()) +
+    " · " + data.injections.length + " GC injections";
+}
+
+async function refresh() {
+  const res = await fetch("/api/trend", { cache: "no-store" });
+  data = await res.json();
+  colorize();
+  statusLine();
+  const sig = data.series.map((s) => s.group + ":" + s.name).join("|");
+  if (sig !== chartSig) {
+    chartSig = sig;
+    render();
+  } else {
+    draw();
+  }
+  if (hoverX != null) readout(hoverX);
+}
+
+document.getElementById("ranges").addEventListener("click", (ev) => {
+  const b = ev.target.closest("button");
+  if (!b) return;
+  rangeKey = b.dataset.range;
+  document.querySelectorAll("#ranges button").forEach((x) => x.classList.toggle("on", x === b));
+  setWindowFromKey();
+  draw();
+});
+function onWindowInput(ev) {
+  let a = Number(document.getElementById("win-a").value);
+  let b = Number(document.getElementById("win-b").value);
+  if (a > b) {
+    if (ev.target.id === "win-a") b = a;
+    else a = b;
+  }
+  win0 = a;
+  win1 = b;
+  pinEnd = dataEndSec() - b < 20;
+  rangeKey = "custom";
+  document.querySelectorAll("#ranges button").forEach((x) => x.classList.remove("on"));
+  draw();
+}
+document.getElementById("win-a").addEventListener("input", onWindowInput);
+document.getElementById("win-b").addEventListener("input", onWindowInput);
+document.getElementById("win-a").addEventListener("pointerdown", () => {
+  document.getElementById("win-a").style.zIndex = "4";
+  document.getElementById("win-b").style.zIndex = "3";
+});
+document.getElementById("win-b").addEventListener("pointerdown", () => {
+  document.getElementById("win-b").style.zIndex = "4";
+  document.getElementById("win-a").style.zIndex = "3";
+});
+window.addEventListener("resize", draw);
+
+const VAR_IDS = [
+  "cal-co-m","cal-co-b","cal-co2-m","cal-co2-b","cal-ch4-m","cal-ch4-b","cal-h2-m","cal-h2-b",
+  "feed-h2","feed-co","feed-co2","feed-ch4","feed-n2","run-name"
+];
+function extraGases() {
+  return [...document.querySelectorAll("#feed-extras .feed-extra")].map((row) => {
+    const name = row.querySelector(".feed-extra-name").value.trim();
+    const raw = row.querySelector(".feed-extra-pct").value.trim();
+    const n = raw === "" ? null : Number(raw);
+    return { name, percent: Number.isFinite(n) ? n : null };
+  }).filter((g) => g.name !== "" || g.percent != null);
+}
+function clearExtraGases() {
+  document.getElementById("feed-extras").replaceChildren();
+}
+function addFeedGas(name, percent) {
+  const row = document.createElement("div");
+  row.className = "feed-extra";
+  const nameIn = document.createElement("input");
+  nameIn.type = "text";
+  nameIn.className = "feed-extra-name";
+  nameIn.placeholder = "Gas name";
+  nameIn.setAttribute("aria-label", "Added gas name");
+  nameIn.value = name || "";
+  const pctIn = document.createElement("input");
+  pctIn.type = "number";
+  pctIn.step = "any";
+  pctIn.className = "feed-extra-pct";
+  pctIn.setAttribute("aria-label", "Added gas percent");
+  pctIn.value = percent == null ? "" : percent;
+  const remove = document.createElement("button");
+  remove.type = "button";
+  remove.textContent = "Remove";
+  remove.addEventListener("click", () => {
+    row.remove();
+    feedCheck();
+    localStorage.setItem("minipilot-run-vars", JSON.stringify(collectVars()));
+  });
+  row.append(nameIn, pctIn, remove);
+  document.getElementById("feed-extras").appendChild(row);
+  return nameIn;
+}
+function numOrNull(id) {
+  const v = document.getElementById(id).value.trim();
+  if (v === "") return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+const BROOKS_K = {
+  brooksN2: { calibratedOn: "N2", k: { h2: 1.008, co: 0.995, co2: 0.773, ch4: 0.763, n2: 1.000 } },
+  brooksH2: { calibratedOn: "H2", k: { h2: 1.000, co: 0.987, co2: 0.767, ch4: 0.757, n2: 0.992 } }
+};
+function collectVars() {
+  return {
+    name: document.getElementById("run-name").value.trim(),
+    calibration: {
+      co: { slope: numOrNull("cal-co-m"), intercept: numOrNull("cal-co-b") },
+      co2: { slope: numOrNull("cal-co2-m"), intercept: numOrNull("cal-co2-b") },
+      ch4: { slope: numOrNull("cal-ch4-m"), intercept: numOrNull("cal-ch4-b") },
+      h2: { slope: numOrNull("cal-h2-m"), intercept: numOrNull("cal-h2-b") }
+    },
+    brooksN2: BROOKS_K.brooksN2,
+    brooksH2: BROOKS_K.brooksH2,
+    feed: {
+      h2: numOrNull("feed-h2"), co: numOrNull("feed-co"), co2: numOrNull("feed-co2"),
+      ch4: numOrNull("feed-ch4"), n2: numOrNull("feed-n2"),
+      gases: extraGases()
+    }
+  };
+}
+function applyVars(doc) {
+  if (!doc) return;
+  const set = (id, v) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = v == null ? "" : v;
+  };
+  const c = doc.calibration || {};
+  set("cal-co-m", c.co && c.co.slope); set("cal-co-b", c.co && c.co.intercept);
+  set("cal-co2-m", c.co2 && c.co2.slope); set("cal-co2-b", c.co2 && c.co2.intercept);
+  set("cal-ch4-m", c.ch4 && c.ch4.slope); set("cal-ch4-b", c.ch4 && c.ch4.intercept);
+  set("cal-h2-m", c.h2 && c.h2.slope); set("cal-h2-b", c.h2 && c.h2.intercept);
+  const f = doc.feed || {};
+  ["h2","co","co2","ch4","n2"].forEach((g) => set("feed-" + g, f[g]));
+  clearExtraGases();
+  const extras = Array.isArray(f.gases) ? f.gases : [];
+  extras.forEach((g) => addFeedGas(g && g.name, g && g.percent));
+  if (!extras.length && f.other) addFeedGas("Other", f.other);
+  set("run-name", doc.name);
+  feedCheck();
+  localStorage.setItem("minipilot-run-vars", JSON.stringify(collectVars()));
+}
+function feedCheck() {
+  const ids = ["feed-h2","feed-co","feed-co2","feed-ch4","feed-n2"];
+  let sum = 0, any = false;
+  ids.forEach((id) => {
+    const v = document.getElementById(id).value.trim();
+    if (v === "") return;
+    any = true;
+    sum += Number(v);
+  });
+  extraGases().forEach((g) => {
+    if (g.percent == null) return;
+    any = true;
+    sum += g.percent;
+  });
+  document.getElementById("feed-total").textContent = any ? "Total " + sum.toFixed(2) + "%" : "Total —";
+  document.getElementById("feed-warn").hidden = !(any && sum > 100);
+}
+function varStatus(text) { document.getElementById("var-status").textContent = text; }
+async function refreshVarList() {
+  const sel = document.getElementById("var-list");
+  const current = sel.value;
+  const res = await fetch("/api/vars/list", { cache: "no-store" });
+  let files = await res.json();
+  if (!Array.isArray(files)) files = files ? [files] : [];
+  files = files.flat().filter((f) => f && f.name);
+  sel.innerHTML = "";
+  const blank = document.createElement("option");
+  blank.value = "";
+  blank.textContent = files.length ? "Saved files" : "No saved files yet";
+  sel.appendChild(blank);
+  files.forEach((f) => {
+    const o = document.createElement("option");
+    o.value = f.name;
+    o.textContent = f.name + ".json";
+    sel.appendChild(o);
+  });
+  if ([...sel.options].some((o) => o.value === current)) sel.value = current;
+}
+document.getElementById("feed-add").addEventListener("click", () => {
+  addFeedGas("", null).focus();
+});
+document.getElementById("cal").addEventListener("input", () => {
+  feedCheck();
+  localStorage.setItem("minipilot-run-vars", JSON.stringify(collectVars()));
+});
+document.getElementById("tab-trend").addEventListener("click", () => {
+  document.getElementById("tab-trend").classList.add("on");
+  document.getElementById("tab-cal").classList.remove("on");
+  document.getElementById("window").hidden = false;
+  document.getElementById("charts").hidden = false;
+  document.getElementById("foot").hidden = false;
+  document.getElementById("cal").hidden = true;
+  draw();
+});
+document.getElementById("tab-cal").addEventListener("click", () => {
+  document.getElementById("tab-cal").classList.add("on");
+  document.getElementById("tab-trend").classList.remove("on");
+  document.getElementById("window").hidden = true;
+  document.getElementById("charts").hidden = true;
+  document.getElementById("foot").hidden = true;
+  document.getElementById("cal").hidden = false;
+  refreshVarList().catch((err) => varStatus(String(err)));
+});
+document.getElementById("var-save").addEventListener("click", async () => {
+  const res = await fetch("/api/vars/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(collectVars())
+  });
+  const body = await res.json();
+  if (!res.ok) { varStatus(body.error || "Save failed"); return; }
+  varStatus("Saved " + body.file);
+  refreshVarList();
+});
+document.getElementById("var-save-as").addEventListener("click", async () => {
+  varStatus("Choose a folder in the save window…");
+  const res = await fetch("/api/vars/save-as", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(collectVars())
+  });
+  const body = await res.json();
+  if (!res.ok) { varStatus(body.error || "Save failed"); return; }
+  varStatus(body.file ? "Saved " + body.file : "Save canceled");
+});
+document.getElementById("download-table").addEventListener("click", async () => {
+  const status = document.getElementById("table-status");
+  status.textContent = "Building the table…";
+  try {
+    const res = await fetch("/api/table", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(collectVars())
+    });
+    if (!res.ok) { status.textContent = await res.text(); return; }
+    const blob = await res.blob();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "injection-table.csv";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    status.textContent = "Downloaded injection-table.csv";
+  } catch (err) {
+    status.textContent = String(err);
+  }
+});
+document.getElementById("var-load").addEventListener("click", async () => {
+  const name = document.getElementById("var-list").value;
+  if (!name) { varStatus("Choose a saved file first"); return; }
+  const res = await fetch("/api/vars/load?name=" + encodeURIComponent(name), { cache: "no-store" });
+  const body = await res.json();
+  if (!res.ok) { varStatus(body.error || "Load failed"); return; }
+  applyVars(body);
+  varStatus("Loaded " + name);
+});
+document.getElementById("var-load-from").addEventListener("click", async () => {
+  varStatus("Choose a file in the open window…");
+  const res = await fetch("/api/vars/load-from", { method: "POST" });
+  const body = await res.json();
+  if (!res.ok) { varStatus(body.error || "Load failed"); return; }
+  if (!body.file) { varStatus("Load canceled"); return; }
+  applyVars(body.data);
+  varStatus("Loaded " + body.file);
+});
+try {
+  const draft = localStorage.getItem("minipilot-run-vars");
+  if (draft) applyVars(JSON.parse(draft));
+} catch (err) { /* keep the blank sheet */ }
+
+refresh();
+setInterval(refresh, 3000);
+</script>
+</body>
+</html>
