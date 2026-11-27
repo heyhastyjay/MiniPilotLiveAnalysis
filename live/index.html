@@ -695,7 +695,7 @@
   <div class="phone-tabs" role="tablist" aria-label="Mobile pages">
     <button type="button" data-phone-tab="conversion" class="on" role="tab" aria-selected="true">Carbon conversion</button>
     <button type="button" data-phone-tab="variables" role="tab" aria-selected="false">Process variables</button>
-    <button type="button" data-phone-tab="table" role="tab" aria-selected="false">Table</button>
+    <button type="button" data-phone-tab="table" role="tab" aria-selected="false">Results Table</button>
   </div>
   <section class="phone-pane" data-phone-pane="conversion">
     <div class="phone-conversion">
@@ -778,7 +778,7 @@
     </section>
     <div class="legend legend-side" id="conversion-legend"></div>
   </div>
-  <h2>Injections</h2>
+  <h2>Results Table</h2>
   <p class="cal-note" id="analysis-feed"></p>
   <div class="exclude-row">
     <span>Consolidate table</span>
@@ -1566,6 +1566,7 @@ function render() {
   if (document.body.classList.contains("public-mobile")) {
     renderPhoneFeeds();
     showPhoneTab(phoneTab);
+    fillAnalysis();
     return;
   }
   const host = document.getElementById("charts");
@@ -2472,7 +2473,8 @@ function fillAnalysis() {
   }
   const phoneTable = document.getElementById("phone-table");
   const srcTable = document.getElementById("analysis-table");
-  if (phoneTable && srcTable && document.body.classList.contains("public-mobile")) {
+  if (phoneTable && srcTable) {
+    phoneTable.className = srcTable.className;
     phoneTable.innerHTML = srcTable.innerHTML;
   }
 }
