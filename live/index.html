@@ -770,6 +770,14 @@
   </div>
 </section>
 <section id="analysis" hidden>
+  <h2>Carbon conversion</h2>
+  <p class="cal-note">Temperature and inlet flow are at reactor exit, after the 1 L dead volume. Point color is that inlet flow. Each line fits conversion against temperature for one inlet flow, rounded to the nearest 100 SCCM. In each equation, y is carbon conversion (%) and x is temperature at exit (°C). Hiding a row drops that injection from this chart, the carbon balance chart, and these fits.</p>
+  <div class="chart-row">
+    <section data-group="conversion">
+      <canvas id="conversion-canvas"></canvas>
+    </section>
+    <div class="legend legend-side" id="conversion-legend"></div>
+  </div>
   <h2>Injections</h2>
   <p class="cal-note" id="analysis-feed"></p>
   <div class="exclude-row">
@@ -807,14 +815,6 @@
     </div>
   </div>
   <p class="cal-note" id="balance-readout">Move across the graph to read an injection.</p>
-  <h2>Carbon conversion</h2>
-  <p class="cal-note">Temperature and inlet flow are at reactor exit, after the 1 L dead volume. Point color is that inlet flow. Each line fits conversion against temperature for one inlet flow, rounded to the nearest 100 SCCM. In each equation, y is carbon conversion (%) and x is temperature at exit (°C). Hiding a row drops that injection from this chart, the carbon balance chart, and these fits.</p>
-  <div class="chart-row">
-    <section data-group="conversion">
-      <canvas id="conversion-canvas"></canvas>
-    </section>
-    <div class="legend legend-side" id="conversion-legend"></div>
-  </div>
 </section>
 <section id="cal" hidden>
   <h2>Feed gas composition</h2>
