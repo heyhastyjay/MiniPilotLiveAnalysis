@@ -1358,18 +1358,20 @@ function draw() {
       ctx.fillText(label, pad.l - 6, y);
     }
 
-    ctx.strokeStyle = "rgba(253, 186, 116, 0.55)";
-    ctx.setLineDash([3, 3]);
-    data.injections.forEach((inj) => {
-      const ms = start + inj.t * 1000;
-      if (ms < plot0 || ms > plot1) return;
-      const x = X(ms);
-      ctx.beginPath();
-      ctx.moveTo(x, pad.t);
-      ctx.lineTo(x, pad.t + ih);
-      ctx.stroke();
-    });
-    ctx.setLineDash([]);
+    if (!section.closest("#phone-feeds")) {
+      ctx.strokeStyle = "rgba(253, 186, 116, 0.55)";
+      ctx.setLineDash([3, 3]);
+      data.injections.forEach((inj) => {
+        const ms = start + inj.t * 1000;
+        if (ms < plot0 || ms > plot1) return;
+        const x = X(ms);
+        ctx.beginPath();
+        ctx.moveTo(x, pad.t);
+        ctx.lineTo(x, pad.t + ih);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+    }
     if (section.dataset.first) {
       ctx.fillStyle = "#fdba74";
       ctx.textAlign = "center";
