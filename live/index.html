@@ -362,20 +362,10 @@
   .phone-conversion canvas,
   .feed-scroller canvas { height: min(420px, 52vh); }
   .phone-conversion .legend { margin-top: 8px; }
-  .feed-scroller {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    scrollbar-width: none;
-  }
-  .feed-scroller::-webkit-scrollbar { display: none; }
+  .feed-scroller { display: block; }
   .feed-scroller > section {
-    flex: 0 0 100%;
-    scroll-snap-align: start;
     margin: 0;
-    min-width: 0;
-    padding: 0 16px 12px;
-    box-sizing: border-box;
+    padding: 0 16px 20px;
   }
   .feed-scroller h2 { margin: 0 0 6px; }
   .phone-table-wrap { padding: 0 12px 8px; overflow-x: auto; }
@@ -706,7 +696,7 @@
     </div>
   </section>
   <section class="phone-pane" data-phone-pane="variables" hidden>
-    <p class="cal-note phone-note">Swipe for temperature, pressure, inlet flow, and outlet flow.</p>
+    <p class="cal-note phone-note">Scroll for temperature, pressure, inlet flow, and outlet flow.</p>
     <div id="phone-feeds" class="feed-scroller"></div>
   </section>
   <section class="phone-pane" data-phone-pane="table" hidden>
