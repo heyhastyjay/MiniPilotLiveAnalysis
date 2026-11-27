@@ -567,7 +567,7 @@
     <h1>Mini pilot process trend</h1>
     <div class="sub" id="sub"><span class="live-dot" hidden></span><span id="sub-text">Loading today’s run…</span></div>
     <div class="connect-row lab-only" id="connect-row">
-      <button type="button" id="connect">Connect</button>
+      <button type="button" id="connect">Publish</button>
       <span id="connect-status">Checking the link to jayhasty.com…</span>
     </div>
   </div>
@@ -901,8 +901,9 @@
 </div>
 <p class="credit">Developed by Dr. Julia Hasty for the Institute of Gas Innovation and Technology at the Advanced Energy Research and Technology Center. 2026</p>
 <script>
-const PUBLIC = location.pathname === "/SBU-IGIT-minipilot" || location.pathname.startsWith("/SBU-IGIT-minipilot/");
-const ROOT = PUBLIC ? "/SBU-IGIT-minipilot" : "";
+const PUBLIC_ROOTS = ["/minipilotlive", "/SBU-IGIT-minipilot"];
+const ROOT = PUBLIC_ROOTS.find((p) => location.pathname === p || location.pathname.startsWith(p + "/")) || "";
+const PUBLIC = ROOT !== "";
 let liveLink = null;
 let appliedVarsSig = "";
 if (PUBLIC) {
@@ -3067,13 +3068,13 @@ function paintConnect(st) {
   const note = document.getElementById("connect-status");
   if (!btn || !note || !st) return;
   btn.classList.toggle("on", !!st.enabled);
-  btn.textContent = st.enabled ? "Disconnect" : "Connect";
+  btn.textContent = st.enabled ? "Publishing" : "Publish";
   if (!st.configured) {
     note.textContent = "Copy live/publish.json onto this computer, next to server.ps1.";
     return;
   }
   if (st.lastError) note.textContent = st.lastError;
-  else if (st.enabled) note.textContent = st.lastAt ? ("Sending · last update " + st.lastAt) : "Sending to jayhasty.com/SBU-IGIT-minipilot";
+  else if (st.enabled) note.textContent = st.lastAt ? ("Publishing to jayhasty.com/minipilotlive · " + st.lastAt) : "Publishing to jayhasty.com/minipilotlive";
   else note.textContent = "Off. The website keeps the last snapshot.";
 }
 async function refreshPublishStatus() {
@@ -3098,7 +3099,7 @@ if (PUBLIC) {
     });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) {
-      document.getElementById("connect-status").textContent = body.error || "Could not connect";
+      document.getElementById("connect-status").textContent = body.error || "Could not publish";
       return;
     }
     paintConnect(body);

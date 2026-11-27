@@ -1,4 +1,4 @@
-// Public read-only snapshot for https://jayhasty.com/SBU-IGIT-minipilot
+// Public read-only snapshot for https://jayhasty.com/minipilotlive
 // The lab computer POSTs the latest trend and calculations. This process stores
 // that snapshot and serves the dashboard page.
 const http = require("http");
@@ -11,7 +11,7 @@ const LIVE = process.env.LIVE_DIR || __dirname;
 const SNAPSHOT_PATH = process.env.SNAPSHOT_PATH || path.join(LIVE, "snapshot.json");
 const TOKEN = process.env.MINIPILOT_INGEST_TOKEN || "";
 const MAX_BODY = 48 * 1024 * 1024;
-const PREFIX = "/SBU-IGIT-minipilot";
+const PREFIXES = ["/minipilotlive", "/SBU-IGIT-minipilot"];
 
 const FILES = {
   "/": { file: "index.html", type: "text/html; charset=utf-8" },
@@ -56,8 +56,11 @@ function sameToken(got) {
 
 function routeOf(urlPath) {
   const bare = urlPath.split("?")[0];
-  if (bare === PREFIX) return "/";
-  if (bare.startsWith(PREFIX + "/")) return bare.slice(PREFIX.length);
+  for (const prefix of PREFIXES) {
+    if (bare === prefix || bare.startsWith(prefix + "/")) {
+      return bare.slice(prefix.length) || "/";
+    }
+  }
   return bare;
 }
 
@@ -173,5 +176,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log("minipilot public http://0.0.0.0:" + PORT + PREFIX);
+  console.log("minipilot public http://0.0.0.0:" + PORT + PREFIXES[0]);
 });
