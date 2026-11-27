@@ -318,6 +318,52 @@
   .swatch.band.pair { background: rgba(125, 211, 252, 0.4); }
   .swatch.dash { border-top-style: dashed; }
   canvas { width: 100%; height: 220px; background: var(--panel); display: block; }
+  #phone { display: none; }
+  .phone-block { margin: 0; }
+  .phone-block h2 { margin: 18px 16px 8px; }
+  .phone-note { margin: 0 16px 8px; }
+  .phone-conversion { padding: 0 16px; }
+  .phone-conversion canvas { height: 280px; }
+  .phone-conversion .legend { margin-top: 8px; }
+  .feed-scroller {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding: 0 16px 12px;
+    scrollbar-width: none;
+  }
+  .feed-scroller::-webkit-scrollbar { display: none; }
+  .feed-scroller > section {
+    flex: 0 0 86%;
+    scroll-snap-align: start;
+    margin: 0;
+    min-width: 0;
+  }
+  .feed-scroller canvas { height: 240px; }
+  .feed-scroller h2 { margin: 0 0 6px; }
+  .phone-table-wrap { padding: 0 12px 8px; overflow-x: auto; }
+  @media (max-width: 820px) {
+    body.public-mobile { padding-bottom: 24px; }
+    body.public-mobile header {
+      display: block;
+      padding: 12px 16px 8px;
+    }
+    body.public-mobile .titleblock { grid-column: auto; }
+    body.public-mobile h1 { font-size: 18px; }
+    body.public-mobile .tabs,
+    body.public-mobile .logo,
+    body.public-mobile .ranges,
+    body.public-mobile #window,
+    body.public-mobile #charts,
+    body.public-mobile #foot,
+    body.public-mobile #pfd,
+    body.public-mobile #analysis,
+    body.public-mobile #cal,
+    body.public-mobile #info,
+    body.public-mobile .credit { display: none !important; }
+    body.public-mobile #phone { display: block; }
+  }
   #analysis { padding: 4px 28px 28px; }
   #analysis h2 { margin: 22px 0 6px; }
   #analysis h2:first-child { margin-top: 4px; }
@@ -595,6 +641,38 @@
     <input id="win-b" type="range" min="0" max="1" value="1" aria-label="Window end">
   </div>
 </div>
+</div>
+<div id="phone">
+  <section class="phone-block">
+    <h2>Carbon conversion</h2>
+    <div class="phone-conversion">
+      <section data-group="conversion">
+        <canvas id="phone-conversion-canvas"></canvas>
+      </section>
+      <div class="legend" id="phone-conversion-legend"></div>
+    </div>
+  </section>
+  <section class="phone-block">
+    <h2>Live feeds</h2>
+    <p class="cal-note phone-note">Swipe for temperature, pressure, inlet flow, and outlet flow.</p>
+    <div id="phone-feeds" class="feed-scroller"></div>
+  </section>
+  <section class="phone-block">
+    <h2>Consolidated table</h2>
+    <div class="phone-table-wrap">
+      <table class="analysis is-consolidated" id="phone-table">
+        <thead>
+          <tr>
+            <th class="range">Pressure (psi)</th>
+            <th class="range">Temperature (°C)</th>
+            <th>Flow rate (SCCM)</th>
+            <th>Carbon conversion (%)</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
 </div>
 <main id="charts"></main>
 <footer id="foot"></footer>
@@ -1026,6 +1104,17 @@ function viewBounds() {
 function seriesIn(group) {
   return data.series.filter((s) => effectiveGroup(s) === group);
 }
+function inletSeries() {
+  return data.series.filter((s) => s.group === "inlet" || s.name === "inlet flow");
+}
+function outletSeries() {
+  return data.series.filter((s) => s.group === "flow" || s.name === "Outlet mass flow" || s.name === "Outlet volumetric flow");
+}
+function sectionSeries(section) {
+  if (section.dataset.feed === "inlet") return inletSeries();
+  if (section.dataset.feed === "outlet") return outletSeries();
+  return seriesIn(section.dataset.group);
+}
 function effectiveGroup(s) {
   if (s.group === "inlet" || s.group === "flow") return "gas";
   return s.group;
@@ -1145,7 +1234,7 @@ function draw() {
   const [x0, x1] = viewBounds();
   syncSliders();
   const span = Math.max(1, x1 - x0);
-  document.querySelectorAll("#charts > section, #analysis [data-group='conversion'], #analysis [data-group='balance']").forEach((section) => {
+  document.querySelectorAll("#charts > section, #analysis [data-group='conversion'], #analysis [data-group='balance'], #phone-feeds > section, #phone [data-group='conversion']").forEach((section) => {
     const canvas = section.querySelector("canvas");
     if (!canvas || canvas.clientWidth < 2) return;
     const group = section.dataset.group;
@@ -1169,7 +1258,7 @@ function draw() {
       drawBalance(ctx, w, h);
       return;
     }
-    const series = seriesIn(group).filter((s) => !hidden.has(s.name));
+    const series = sectionSeries(section).filter((s) => !hidden.has(s.name));
     const pad = { l: 58, r: 16, t: 16, b: 28 };
     const iw = w - pad.l - pad.r;
     const ih = h - pad.t - pad.b;
@@ -1289,6 +1378,11 @@ function draw() {
       ctx.stroke();
     }
   });
+  const phoneLegend = document.getElementById("phone-conversion-legend");
+  const srcLegend = document.getElementById("conversion-legend");
+  if (phoneLegend && srcLegend && document.body.classList.contains("public-mobile")) {
+    phoneLegend.innerHTML = srcLegend.innerHTML;
+  }
 }
 
 function nearestIndex(ms) {
@@ -1332,7 +1426,55 @@ function readout(ms) {
   el.textContent = parts.join("   ");
 }
 
+let mobileOn = false;
+function applyMobile() {
+  if (!PUBLIC) return false;
+  const on = window.matchMedia("(max-width: 820px)").matches;
+  document.body.classList.toggle("public-mobile", on);
+  const changed = on !== mobileOn;
+  mobileOn = on;
+  return changed;
+}
+function renderPhoneFeeds() {
+  const host = document.getElementById("phone-feeds");
+  if (!host) return;
+  host.replaceChildren();
+  const feeds = [
+    ["temp", "Temperature", seriesIn("temp")],
+    ["pressure", "Pressure", seriesIn("pressure")],
+    ["inlet", "Inlet flow", inletSeries()],
+    ["outlet", "Outlet flow", outletSeries()]
+  ];
+  feeds.forEach(([feed, title, series]) => {
+    if (!series.length) return;
+    const section = document.createElement("section");
+    section.dataset.feed = feed;
+    section.dataset.group = feed === "inlet" || feed === "outlet" ? "gas" : feed;
+    const h2 = document.createElement("h2");
+    h2.textContent = title;
+    section.appendChild(h2);
+    const legend = document.createElement("div");
+    legend.className = "legend";
+    series.forEach((s) => {
+      const item = document.createElement("span");
+      const sw = document.createElement("span");
+      sw.className = "swatch" + (s.dash ? " dash" : "");
+      sw.style.borderTopColor = s.color || "#a8a29e";
+      item.appendChild(sw);
+      item.appendChild(document.createTextNode(legendName(s)));
+      legend.appendChild(item);
+    });
+    section.appendChild(legend);
+    section.appendChild(document.createElement("canvas"));
+    host.appendChild(section);
+  });
+}
 function render() {
+  if (document.body.classList.contains("public-mobile")) {
+    renderPhoneFeeds();
+    draw();
+    return;
+  }
   const host = document.getElementById("charts");
   const present = GROUPS.filter(([g]) => seriesIn(g).length);
   host.innerHTML = "";
@@ -2225,17 +2367,21 @@ function fillAnalysis() {
   const consolidated = consolidateOn();
   setAnalysisHead(consolidated);
   body.replaceChildren();
-  if (consolidated) {
-    fillConsolidated(body, rows);
-    return;
+  if (consolidated) fillConsolidated(body, rows);
+  else {
+    const reveal = showExcluded();
+    rows.forEach((p) => {
+      if (!hasAnalysisData(p)) return;
+      const hidden = hiddenInjections.has(pointKey(p));
+      if (hidden && !reveal) return;
+      body.appendChild(analysisRow(p, hidden));
+    });
   }
-  const reveal = showExcluded();
-  rows.forEach((p) => {
-    if (!hasAnalysisData(p)) return;
-    const hidden = hiddenInjections.has(pointKey(p));
-    if (hidden && !reveal) return;
-    body.appendChild(analysisRow(p, hidden));
-  });
+  const phoneTable = document.getElementById("phone-table");
+  const srcTable = document.getElementById("analysis-table");
+  if (phoneTable && srcTable && document.body.classList.contains("public-mobile")) {
+    phoneTable.innerHTML = srcTable.innerHTML;
+  }
 }
 
 function drawSnapshot() {
@@ -2324,7 +2470,10 @@ document.getElementById("win-b").addEventListener("pointerdown", () => {
   document.getElementById("win-b").style.zIndex = "4";
   document.getElementById("win-a").style.zIndex = "3";
 });
-window.addEventListener("resize", draw);
+window.addEventListener("resize", () => {
+  if (applyMobile() && data) render();
+  else draw();
+});
 
 const VAR_IDS = [
   "cal-co-m","cal-co-b","cal-co2-m","cal-co2-b","cal-ch4-m","cal-ch4-b","cal-h2-m","cal-h2-b",
@@ -3084,6 +3233,7 @@ async function refreshPublishStatus() {
   } catch (err) { /* the lab page is not open on this server */ }
 }
 if (PUBLIC) {
+  applyMobile();
   refresh();
   setInterval(refresh, 3000);
 } else {
