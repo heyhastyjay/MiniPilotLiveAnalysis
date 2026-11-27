@@ -1,2 +1,50 @@
 we accidentally didnt fill the entire reactor system by bybassing the flow meter, so the reactor was slowly fillnig up with only the 300sccm flow rate while we were takling to devinder. so technically we only hit run variables around 2pm ish
-this is the 2:1 hydrogen/co syngas tank for feed gas. we also used the 2:1 syngas for calibration and used the simulated mixed gas also for calibration for this run. 
+this is the 2:1 hydrogen/co syngas tank for feed gas. we also used the 2:1 syngas for calibration and used the simulated mixed gas also for calibration for this run.
+
+post processing
+
+Carbon balance. Feed carbon is the inlet at reactor exit (first inlet meter, Module5 Inp2) times the 33.33% CO in the syngas. Product carbon is the Cole-Parmer mass flow times the GC carbon (CO+CO2+CH4). Gas that left through a bypass or a blowdown was not measured by the product meter, and there is no vent total to put back into the balance. Those injections are hidden. They are not given a corrected conversion.
+
+The first inlet meter was used to pressurize the system with a manual bypass, so that gas is in the inlet total and not in the product meter.
+- 10:43–11:20. Inlet about 1000 sccm, reactor still 20°C, pressure hunting between 0 and 376 psi (setpoint 200–250). Injections 001–005.
+- 14:06–14:16. Setpoint moved from 250 psi to 700 psi. Inlet stayed near 300 sccm. The product meter read zero from 14:06, then a slug of 1.4 SLPM at 14:15 as the bypass came off. Pressure did not rise smoothly. It peaked and relieved: 685 psi at 14:07:50, 810 at 14:08:30, 866 at 14:10:00, 790 at 14:11:00, 819 at 14:12:20, 810 at 14:13:10, 803 at 14:14:00, and held near 710 psi by 14:17. Injections 019 and 020.
+
+Blowdowns in the SpecView pressure log (26_324.LOG), and what they do to the balance:
+- 12:32:40–12:36. Pressure 255 → 909 psi, then down to about 269 psi, setpoint still 250. Inlet had just been set to 300 sccm. The product meter log starts at 12:40, so this vent did not pass the meter. Injection 011 left the reactor at 12:36:48, in the tail of that vent.
+- 14:07–14:16. The relief spikes listed above, same interval as the bypass pressurization. Each drop is gas that left through the relief rather than the product meter.
+- 20:21:50–20:26. Pressure 715 → 129 psi, inlet already at zero, setpoint still 700. The last parcel left the reactor at 20:10 (injection 052). This blowdown is after every injection, so none is hidden for it, and the balance is not extended past 052.
+
+No other blowdown between 14:17 and 20:21. Pressure stayed near 710–735 psi. The 16:20 and 19:30 moves are the flow steps to 800 sccm (about 20 psi), not vents.
+
+Injections to hide
+
+| Injection | Time | Why |
+|---|---|---|
+| 001–010 | 10:39–12:18 | Already off the graph. Morning bypass, cold reactor, no product-meter flow. 001 is the calibration mix. |
+| 011 | 12:41 | Gas left at 12:36, in the 909 → 269 psi blowdown. Bed at injection was 105°C. |
+| 012–018 | 12:52–13:58 | Still on the 250 psi setpoint, filling at 300 sccm, before the 700 psi run. 012–014 are also still changing temperature. |
+| 019 | 14:09 | Already off the graph. Meter at zero, reactor at 866 psi, inside the bypass pressurization. |
+| 020 | 14:20 | Gas left at 14:14, during the relief spikes. The 0.17 SLPM median was taken while flow was still recovering from zero. |
+| 023 | 14:54 | Pressure was steady. Outlet flow fell from 0.25 to 0.13 SLPM just before the injection, and the balance used the dip. The flow that left the reactor gives about 29%, next to 022. |
+| 028 | 15:49 | Inlet was cut from 504 to 304 sccm while this parcel was in the line. The 70.8% pairs the old inlet with the new outlet. The line flow gives about 51%. |
+| 044 | 18:45 | First injection after the cut from 500 to 300 sccm. The line had not finished falling from 0.33 to 0.16 SLPM. |
+
+001–010 (10:39–12:18). Not on the conversion graph. Morning bypass pressurization, reactor at 20°C until 009, hydrogen area is 0 through 006, and 001 is the calibration mix (CO+CO2+CH4 = 99%, no hydrogen). No product-meter flow.
+
+011 (12:41, plotted at 238°C, 29%). Gas left at 12:36:48 during the 909 → 269 psi blowdown. The bed at injection was 105°C. The vented carbon is not in the product meter.
+
+012–018 (12:52–13:58, 9% to 55%). After that blowdown and before the run pressure. Setpoint was still 250 psi (bed about 265 psi) while the system finished filling at 300 sccm. Run pressure is the 700 psi setpoint from 14:17 on. 012–014 are also still changing temperature (012 is 19% at 119°C and 013 is 9% at 167°C).
+
+019 (14:09). Not plotted. Product meter at zero, reactor pressure 866 psi, in the bypass pressurization.
+
+020 (14:20, 48.9% at 271°C). Gas left at 14:14:17, inside the bypass pressurization and the relief spikes. The meter median of 0.17 SLPM was taken while flow was still swinging from 0.06 to 0.25 after reading zero.
+
+023 (14:54, 60.3% at 227°C). Not a blowdown. Pressure was steady near 710 psi and the GC matches the neighbors. Outlet flow fell from about 0.25 SLPM to 0.13 SLPM in the two minutes before the injection, and the balance used the dip. The flow of the gas that left the reactor (median 0.23 SLPM) gives about 29%, next to 022 at 35% and 238°C.
+
+028 (15:49, 70.8% at 264°C). Not a blowdown. Inlet was cut from 504 sccm to 304 sccm while this parcel was in the line (504 sccm at exit, 304 sccm at injection) and the outlet fell from about 0.28 SLPM to 0.16 SLPM. The balance pairs the old inlet with the new outlet. The flow that filled the line (0.27 SLPM) gives about 51%, with the other 500 sccm points.
+
+044 (18:45, 35.4% at 254°C). Not a blowdown. First injection after the cut from 500 sccm to 300 sccm. Outlet flow fell from 0.33 to 0.16 SLPM between 18:35 and 18:38, and this gas left at 18:39. It plots low next to 49–56% at 244–262°C once the 300 sccm flow had settled.
+
+Leave plotted: 021 on, except 023, 028, and 044. 021 left the reactor at 14:25, after pressure had held near 712 psi and the 1 L line had flushed the 14:15 slug. 031 (66% at 282°C) stays. The meter held 0.11 SLPM for the whole transit and the bed was steady. 024 and 025 stay blank. SpecView has no exit sample there, which is the step up to 500 sccm.
+
+The four calibrated gases sum to 56–60% on every injection after hydrogen appears, including the last ones. That gap is in the level of every conversion. It is not a reason to hide a single injection. On 006, 024, 025, 039, 041, 044, 045, and 051 the CO area and the CH4 area are the same integer, so the CO-versus-CH4 split on those eight is not usable. The carbon total barely moves.

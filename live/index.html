@@ -43,15 +43,121 @@
     min-width: 0;
   }
   .ranges { grid-column: 3; justify-self: end; align-self: center; }
+  .connect-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
+  #connect-status { color: var(--muted); font-size: 12px; max-width: 460px; }
+  .public-view .lab-only { display: none !important; }
+  .public-view #cal button { display: none; }
   .tabs { display: flex; gap: 6px; padding: 0 28px 8px; }
-  #cal { padding: 4px 28px 28px; max-width: 1100px; }
-  #cal h2 {
+  #pfd { padding: 4px 28px 28px; }
+  .pfd-switch { display: flex; gap: 6px; margin: 4px 0 14px; }
+  .pfd-fig {
+    position: relative;
+    width: min(100%, 980px);
+    background: #fff;
+    line-height: 0;
+  }
+  .pfd-fig img { display: block; width: 100%; height: auto; }
+  .pill {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+    min-width: 9%;
+    background: #fff;
+    color: #1d4ed8;
+    border: 1px solid #1d4ed8;
+    border-radius: 999px;
+    padding: 2px 8px 3px;
+    font: 700 14px/1.15 "Segoe UI", sans-serif;
+    text-align: center;
+    white-space: nowrap;
+    box-shadow: 0 0 0 4px #fff;
+  }
+  .pill.wait { color: #57534e; border-color: #a8a29e; }
+  .pfd-map { border-collapse: collapse; width: 100%; max-width: 920px; margin-top: 16px; }
+  .pfd-map th, .pfd-map td {
+    border-bottom: 1px solid var(--line);
+    padding: 8px 16px 8px 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  .pfd-map th { color: var(--ink); font-weight: 600; }
+  #cal, #info { padding: 4px 28px 28px; max-width: 1100px; }
+  #cal h2, #info h2 {
     margin: 22px 0 6px;
     padding-top: 16px;
     border-top: 1px solid var(--line);
   }
-  #cal h2:first-child { margin-top: 4px; padding-top: 0; border-top: 0; }
+  #cal h2:first-child, #info h2:first-child { margin-top: 4px; padding-top: 0; border-top: 0; }
+  #info { max-width: 1280px; }
   .cal-note { color: var(--muted); margin: 0 0 10px; }
+  .path-row {
+    display: grid;
+    grid-template-columns: minmax(200px, 260px) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    margin: 0 0 14px;
+  }
+  .path-row code, .path-row input[type="text"] {
+    display: block;
+    width: 100%;
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+    overflow-wrap: anywhere;
+    font: 13px/1.4 ui-monospace, "Cascadia Mono", Consolas, monospace;
+  }
+  .path-actions { display: flex; gap: 6px; }
+  .dev-note { color: #f87171; font-weight: 600; margin: 0 0 8px; }
+  table.pipeline { border-collapse: collapse; width: 100%; margin-top: 4px; }
+  table.pipeline th, table.pipeline td {
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    padding: 8px 14px 8px 0;
+    text-align: left;
+    vertical-align: top;
+  }
+  table.pipeline th { font-weight: 600; width: 4.5em; }
+  ul.var-map { margin: 6px 0 8px 1.5em; padding: 0; list-style: none; }
+  ul.var-map li { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; }
+  .ticket-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .ticket-actions a { color: var(--accent); }
+  .modal {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.62);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .modal[hidden] { display: none; }
+  .modal-card {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 48px);
+    overflow: auto;
+    background: var(--panel);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+    padding: 22px 24px 18px;
+  }
+  .modal-card input[type="email"], .modal-card textarea {
+    background: var(--bg);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    padding: 6px 8px;
+    font: inherit;
+    width: 100%;
+  }
+  .modal-card h2 { margin: 0 0 8px; padding: 0; border: 0; font-size: 18px; }
+  .ticket-choices { display: flex; flex-direction: column; gap: 8px; margin: 10px 0 14px; border: 0; padding: 0; }
+  .ticket-choices label { display: flex; gap: 8px; align-items: center; }
+  #ticket-form textarea { min-height: 140px; resize: vertical; }
+  #ticket-form .field-label { display: block; color: var(--muted); margin: 12px 0 6px; }
+  #ticket-status { min-height: 1.2em; }
+  #ticket-status a { color: var(--accent); }
   .cal-grid {
     display: grid;
     grid-template-columns: 160px 1fr 1fr;
@@ -173,8 +279,140 @@
   .legend button { color: var(--ink); }
   .legend button.off { opacity: 0.35; }
   .swatch { width: 16px; height: 0; border-top: 2px solid; display: inline-block; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
+  .exclude-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; color: var(--muted); font-size: 13px; }
+  .exclude-row input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 32px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    background: var(--line);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .exclude-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  .exclude-row input[type="range"]::-moz-range-track {
+    height: 16px;
+    background: transparent;
+    border: 0;
+  }
+  .exclude-row input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+  .swatch.band { height: 10px; border: 0; vertical-align: middle; }
+  .swatch.band.bypass { background: rgba(253, 186, 116, 0.45); }
+  .swatch.band.blow { background: rgba(251, 113, 133, 0.5); }
+  .swatch.band.pair { background: rgba(125, 211, 252, 0.4); }
   .swatch.dash { border-top-style: dashed; }
   canvas { width: 100%; height: 220px; background: var(--panel); display: block; }
+  #analysis { padding: 4px 28px 28px; }
+  #analysis h2 { margin: 22px 0 6px; }
+  #analysis h2:first-child { margin-top: 4px; }
+  #analysis canvas { width: 100%; height: 320px; background: var(--panel); display: block; }
+  #analysis .chart-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  #analysis .chart-row > section { flex: 1 1 auto; min-width: 0; margin-top: 0; }
+  #analysis .legend-side {
+    flex: 0 0 auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 12px;
+    margin: 0;
+  }
+  #analysis .legend-side span { white-space: nowrap; }
+  table.analysis {
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 880px;
+    margin-top: 4px;
+  }
+  table.analysis th, table.analysis td {
+    border-bottom: 1px solid var(--line);
+    padding: 8px 16px 8px 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  table.analysis th.hide, table.analysis td.hide { width: 3.2em; text-align: center; padding-right: 8px; }
+  table.analysis th.when, table.analysis td.when,
+  table.analysis th.range, table.analysis td.range { text-align: left; }
+  table.analysis.is-consolidated {
+    width: 440px;
+    max-width: 100%;
+  }
+  table.analysis.is-consolidated th,
+  table.analysis.is-consolidated td {
+    text-align: center;
+    padding: 8px;
+  }
+  table.analysis.is-consolidated td.flow { font-weight: 600; }
+  @keyframes fresh-glow {
+    0%, 20%, 40%, 60%, 80% {
+      box-shadow: inset 0 0 0 2px rgba(254, 249, 195, 0.95), inset 0 0 18px 4px rgba(253, 224, 71, 0.85);
+      filter: brightness(1.6);
+    }
+    10%, 30%, 50%, 70%, 90% {
+      box-shadow: inset 0 0 0 1px rgba(254, 240, 138, 0.35);
+      filter: brightness(1.12);
+    }
+    100% {
+      box-shadow: inset 0 0 0 0 rgba(254, 240, 138, 0);
+      filter: brightness(1);
+    }
+  }
+  table.analysis td.is-lit {
+    animation-name: fresh-glow;
+    animation-duration: 4.5s;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: 1;
+    animation-fill-mode: none;
+  }
+  table.analysis td[rowspan] { vertical-align: middle; }
+  table.analysis th { color: var(--ink); font-weight: 600; }
+  table.analysis label.hide-box {
+    position: relative;
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--ink);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    vertical-align: middle;
+  }
+  table.analysis label.hide-box input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  table.analysis label.hide-box span {
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
+  }
+  table.analysis label.hide-box input:checked + span::before { content: "×"; }
+  table.analysis tr.is-hidden td:not(.hide) { color: var(--muted); }
   .readout {
     min-height: 1.2em;
     color: var(--muted);
@@ -248,6 +486,77 @@
     border: 2px solid #1c1917;
     cursor: grab;
   }
+  /* Floating lab notes — same chrome as the dashbird scratch pad */
+  .dev-sticky-note {
+    position: fixed;
+    width: 240px;
+    z-index: 18;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), 0 0 0 1px #4a3528;
+    border-radius: 2px;
+    overflow: visible;
+    font-family: "Segoe UI", sans-serif;
+  }
+  .dev-sticky-note__header {
+    display: flex;
+    align-items: center;
+    background: #332418;
+    border-bottom: 1px solid #4a3528;
+    border-radius: 2px 2px 0 0;
+    overflow: hidden;
+  }
+  .dev-sticky-note__header--collapsed {
+    border-bottom: none;
+    border-radius: 2px;
+  }
+  .dev-sticky-note__drag {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+  }
+  .dev-sticky-note__drag:active { cursor: grabbing; }
+  .dev-sticky-note__title {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #d4a574;
+  }
+  .dev-sticky-note__collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 6px;
+    border: none;
+    background: transparent;
+    color: #8b6b52;
+    cursor: pointer;
+  }
+  .dev-sticky-note__collapse:hover { color: #d4a574; }
+  .dev-sticky-note__body {
+    background: #261c14;
+    border-radius: 0 0 2px 2px;
+    overflow: hidden;
+  }
+  .dev-sticky-note__textarea {
+    display: block;
+    width: 100%;
+    min-height: 120px;
+    max-height: 280px;
+    padding: 8px 10px;
+    border: none;
+    outline: none;
+    resize: vertical;
+    background: #261c14;
+    color: #d4c4b0;
+    font-size: 12px;
+    line-height: 1.45;
+    font-family: inherit;
+    box-sizing: border-box;
+  }
+  .dev-sticky-note__textarea::placeholder { color: #6b5242; }
 </style>
 </head>
 <body>
@@ -257,6 +566,10 @@
   <div class="titleblock">
     <h1>Mini pilot process trend</h1>
     <div class="sub" id="sub"><span class="live-dot" hidden></span><span id="sub-text">Loading today’s run…</span></div>
+    <div class="connect-row lab-only" id="connect-row">
+      <button type="button" id="connect">Connect</button>
+      <span id="connect-status">Checking the link to jayhasty.com…</span>
+    </div>
   </div>
   <div class="ranges" id="ranges">
     <button data-range="run">Full run</button>
@@ -265,7 +578,10 @@
 </header>
 <div class="tabs">
   <button type="button" id="tab-trend" class="on">Trend</button>
+  <button type="button" id="tab-analysis">Analysis</button>
   <button type="button" id="tab-cal">Calibration / inputs</button>
+  <button type="button" id="tab-pfd">Process Flow Diagram</button>
+  <button type="button" id="tab-info" class="lab-only">App info</button>
 </div>
 <div class="window" id="window">
   <div class="window-labels">
@@ -282,6 +598,95 @@
 </div>
 <main id="charts"></main>
 <footer id="foot"></footer>
+<section id="pfd" hidden>
+  <div class="pfd-switch" role="tablist" aria-label="Mini-pilot configuration">
+    <button type="button" id="pfd-stirred" class="on" role="tab" aria-selected="true">Stirred reactor</button>
+    <button type="button" id="pfd-packed" role="tab" aria-selected="false">Packed bed reactor</button>
+  </div>
+  <div id="pfd-stirred-view">
+    <p class="cal-note" id="pfd-when">Latest sample loads with the trend.</p>
+    <div class="pfd-fig">
+      <img src="/specview-stirred.png" alt="Parr SpecView process graphic, stirred reactor">
+      <span class="pill" id="pfd-press" style="left:49.7%;top:2.0%" title="PT and PG, reactor pressure">—</span>
+      <span class="pill wait" id="pfd-n2" style="left:32.7%;top:8.7%" title="Nitrogen MFC. The log has one inlet flow and does not name this face.">—</span>
+      <span class="pill wait" id="pfd-h2" style="left:32.7%;top:26.4%" title="Hydrogen MFC. The log has one inlet flow and does not name this face.">—</span>
+      <span class="pill wait" id="pfd-rpm" style="left:76.3%;top:11.7%" title="Stirring speed. Not in the live log.">—</span>
+      <span class="pill wait" id="pfd-cool" style="left:61.9%;top:32.6%" title="Cooling output. Not in the live log.">—</span>
+      <span class="pill" id="pfd-rt" style="left:91.7%;top:26.4%" title="Reactor TC and TIC">—</span>
+      <span class="pill" id="pfd-rheat" style="left:91.9%;top:51.9%" title="Reactor heater output">—</span>
+      <span class="pill" id="pfd-ip" style="left:88.7%;top:65.1%" title="I/P output, pressure output">—</span>
+      <span class="pill wait" id="pfd-st" style="left:76.0%;top:75.1%" title="Separator temperature. Not in the live log.">—</span>
+      <span class="pill wait" id="pfd-sheat" style="left:58.0%;top:82.1%" title="Separator heater output. Not in the live log.">—</span>
+      <span class="pill wait" id="pfd-sol-n2" style="left:10.4%;top:11.0%" title="Nitrogen solenoid. Open and closed are not in the live log.">—</span>
+      <span class="pill wait" id="pfd-sol-h2" style="left:10.4%;top:28.7%" title="Hydrogen solenoid. Open and closed are not in the live log.">—</span>
+      <span class="pill wait" id="pfd-sol-purge" style="left:9.7%;top:46.5%" title="Purge solenoid. Open and closed are not in the live log.">—</span>
+    </div>
+    <table class="pfd-map">
+      <thead>
+        <tr><th>Place on the drawing</th><th>Live value</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Nitrogen MFC and hydrogen MFC, sccm</td><td>A pill sits on each readout. The log has one series, <code>inlet flow</code> (Flow1, AIs-.Module5 Inp2), and does not say which face is nitrogen and which is hydrogen, so both pills stay blank.</td></tr>
+        <tr><td>PT and PG</td><td><code>reactor pressure</code> (Loop4.Process Value, L4PV)</td></tr>
+        <tr><td>Reactor TC and TIC</td><td><code>Reactor</code> (Loop1.Process Value, L1PV)</td></tr>
+        <tr><td>Reactor heater output</td><td><code>Reactor output</code> (Loop1.Output, L1Out)</td></tr>
+        <tr><td>I/P on the line to the separator</td><td><code>Pressure output</code> (Loop4.Output, L4Out)</td></tr>
+        <tr><td>Stirring speed, cooling output, separator temperature, separator heater</td><td>Drawn where the SpecView screen shows them. No channel in the live log yet.</td></tr>
+        <tr><td>Solenoid position, NC and NO</td><td>Equipment on the screen. Open and closed are not in the live log.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div id="pfd-packed-view" hidden>
+    <p class="cal-note">The packed-bed drawing is not here yet. This view stays blank until that print is added.</p>
+  </div>
+</section>
+<section id="analysis" hidden>
+  <h2>Injections</h2>
+  <p class="cal-note" id="analysis-feed"></p>
+  <div class="exclude-row">
+    <span>Consolidate table</span>
+    <input id="consolidate" type="range" min="0" max="1" step="1" value="1" aria-label="Consolidate table">
+  </div>
+  <table class="analysis is-consolidated" id="analysis-table">
+    <thead>
+      <tr>
+        <th class="range">Pressure (psi)</th>
+        <th class="range">Temperature (°C)</th>
+        <th>Flow rate (SCCM)</th>
+        <th>Carbon conversion (%)</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="exclude-row">
+    <span>Excluded points</span>
+    <input id="show-excluded" type="range" min="0" max="1" step="1" value="0" aria-label="Show excluded points">
+    <span id="show-excluded-label">Hidden</span>
+  </div>
+  <h2>Carbon balance</h2>
+  <p class="cal-note">Carbon in is the inlet flow times the feed carbon. Carbon out is the product-gas mass flow times the GC carbon (CO + CO2 + CH4). Both are sccm of carbon. The gap between the lines is what conversion treats as reacted carbon. Shaded bands are where that gap has to be corrected before it is called conversion.</p>
+  <div class="chart-row">
+    <section data-group="balance">
+      <canvas id="balance-canvas"></canvas>
+    </section>
+    <div class="legend legend-side" id="balance-legend">
+      <span><i class="swatch" style="border-top-color:#fdba74"></i>Carbon in</span>
+      <span><i class="swatch" style="border-top-color:#7dd3fc"></i>Carbon out</span>
+      <span><i class="swatch band bypass"></i>Bypass to pressure</span>
+      <span><i class="swatch band blow"></i>Blowdown</span>
+      <span><i class="swatch band pair"></i>Inlet and outlet are different parcels</span>
+    </div>
+  </div>
+  <p class="cal-note" id="balance-readout">Move across the graph to read an injection.</p>
+  <h2>Carbon conversion</h2>
+  <p class="cal-note">Temperature and inlet flow are at reactor exit, after the 1 L dead volume. Point color is that inlet flow. Each line fits conversion against temperature for one inlet flow, rounded to the nearest 100 SCCM. In each equation, y is carbon conversion (%) and x is temperature at exit (°C). Hiding a row drops that injection from this chart, the carbon balance chart, and these fits.</p>
+  <div class="chart-row">
+    <section data-group="conversion">
+      <canvas id="conversion-canvas"></canvas>
+    </section>
+    <div class="legend legend-side" id="conversion-legend"></div>
+  </div>
+</section>
 <section id="cal" hidden>
   <h2>Feed gas composition</h2>
   <p class="cal-note">Volume %. The total is checked against 100%.</p>
@@ -331,7 +736,7 @@
   </table>
 
   <h2>Run variables</h2>
-  <p class="cal-note">Saved in C:\LabDrop\livedashboardvariables.</p>
+  <p class="cal-note" id="var-folder-note">Saved in the calibration inputs folder on App info.</p>
   <div class="cal-grid k run-name-row">
     <span>Run name</span>
     <div class="run-file">
@@ -350,11 +755,164 @@
   <div class="var-actions">
     <button type="button" id="download-table">Download table</button>
   </div>
-  <p class="cal-note">One row per GC injection. Product-gas cells are the median within 30 seconds. Reactor temperature, pressure, and inlet flow are the nearest SpecView sample. Gas % uses the calibration curve on this sheet, and a gas with no curve is written as peak area.</p>
+  <p class="cal-note">One row per GC injection. Product-gas cells are the median within 30 seconds. Reactor temperature, pressure, and inlet flow are the nearest SpecView sample. The 1 L dead volume shifts a second set of those reactor values back by 1 / volumetric flow. Gas % uses the calibration curve on this sheet, and a gas with no curve is written as peak area. Carbon conversion uses those percents, this feed, the inlet at exit, and the product-gas mass flow.</p>
   <p id="table-status"></p>
 </section>
+<section id="info" hidden>
+  <h2>Real-time files</h2>
+  <p class="cal-note">These folders are read on every refresh. Change points the program at a different folder.</p>
+  <div class="path-row">
+    <div>
+      <div>SpecView</div>
+      <div class="cal-note">*.LOG, and livelog.csv</div>
+    </div>
+    <code id="path-specview"></code>
+    <div class="path-actions">
+      <button type="button" data-key="specview" data-act="change">Change</button>
+      <button type="button" data-key="specview" data-act="cancel" hidden>Cancel</button>
+    </div>
+  </div>
+  <div class="path-row">
+    <div>
+      <div>Cole-Parmer outlet meter</div>
+      <div class="cal-note">flowlog-*.log</div>
+    </div>
+    <code id="path-cole"></code>
+    <div class="path-actions">
+      <button type="button" data-key="cole" data-act="change">Change</button>
+      <button type="button" data-key="cole" data-act="cancel" hidden>Cancel</button>
+    </div>
+  </div>
+  <div class="path-row">
+    <div>
+      <div>TotalChrom GC</div>
+      <div class="cal-note">datafile_*.rst</div>
+    </div>
+    <code id="path-gc"></code>
+    <div class="path-actions">
+      <button type="button" data-key="gc" data-act="change">Change</button>
+      <button type="button" data-key="gc" data-act="cancel" hidden>Cancel</button>
+    </div>
+  </div>
+  <p id="path-status" class="cal-note"></p>
+
+  <h2>Calibration inputs</h2>
+  <p class="cal-note">Run-variable JSON files are saved and loaded from this folder.</p>
+  <div class="path-row">
+    <div>Calibration inputs</div>
+    <code id="path-calibration"></code>
+    <div class="path-actions">
+      <button type="button" data-key="calibration" data-act="change">Change</button>
+      <button type="button" data-key="calibration" data-act="cancel" hidden>Cancel</button>
+    </div>
+  </div>
+
+  <h2>Injection table</h2>
+  <p class="cal-note">Download table writes this file and also sends it to the browser.</p>
+  <div class="path-row">
+    <div>Injection table</div>
+    <code id="path-injectionTable"></code>
+    <div class="path-actions">
+      <button type="button" data-key="injectionTable" data-act="change">Change</button>
+      <button type="button" data-key="injectionTable" data-act="cancel" hidden>Cancel</button>
+    </div>
+  </div>
+
+  <h2>Calculation steps</h2>
+  <p class="dev-note">Developer: update this table when the steps from the raw files to the injection table change.</p>
+  <table class="pipeline">
+    <thead>
+      <tr><th>Step</th><th>What the program does</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>Read every *.LOG file in the SpecView folder. Channel names map to these log header names:
+          <ul class="var-map">
+            <li>Reactor = Loop1.Process Value</li>
+            <li>reactor pressure = Loop4.Process Value</li>
+            <li>inlet flow = AIs-.Module5 Inp2</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>Read livelog.csv in the SpecView folder. Channel names map to these log header names:
+          <ul class="var-map">
+            <li>L1PV = Reactor</li>
+            <li>L4PV = reactor pressure</li>
+            <li>Flow1 = inlet flow</li>
+          </ul>
+        </td>
+      </tr>
+      <tr>
+        <td>3</td>
+        <td>Read every Cole-Parmer file matching flowlog-*.log. The line that starts with =~ and contains “log ” sets the clock, including the date. Column headers in order: pressure, temperature, volumetric flow, mass flow.</td>
+      </tr>
+      <tr>
+        <td>4</td>
+        <td>Read every datafile_*.rst in the TotalChrom folder, in file-number order. The injection time is the acquisition time (UTC) shifted 5 hours to show the time in EST. Peak area is the largest value between 100 and 1e9 found for Hydrogen, Carbon Monoxide, Carbon Dioxide, and Methane.</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>For each injection, collect Cole-Parmer seconds from 30 seconds before to 30 seconds after. With at least 10 samples, pressure, temperature, volumetric flow, and mass flow are the median. Otherwise those four cells stay blank.</td>
+      </tr>
+      <tr>
+        <td>6</td>
+        <td>For each injection, take the nearest SpecView sample. If it is more than 30 seconds away, temperature, pressure, and inlet flow stay blank. Inlet flow is also blank when it is negative or 9000 or higher.</td>
+      </tr>
+      <tr>
+        <td>7</td>
+        <td>The dead volume from the end of the reactor to the GC detector is 1 L. The gas passes the back pressure regulator and the Cole-Parmer meter on the way. Transit time (min) = 1 / product-gas volumetric flow (LPM). Gas left reactor is the injection time minus that transit time, rounded to the nearest second. Reactor temperature, pressure, and inlet flow at exit are the nearest SpecView sample to that time, with the same blank rules as step 6. A volumetric flow that is blank or 0 leaves these cells blank. The raw columns stay at the injection time.</td>
+      </tr>
+      <tr>
+        <td>8</td>
+        <td>Apply the curve from Calibration / inputs. Gas % = (peak area − intercept) / slope. These are the adjusted gas percents. They are not scaled to 100%. A gas with no slope is written as its peak area, and that column is labeled area instead of mol%. A missing peak stays blank and counts as 0 in the carbon sum.</td>
+      </tr>
+      <tr>
+        <td>9</td>
+        <td>Carbon out (mol%) is CO + CO2 + CH4. Feed carbon is the CO + CO2 + CH4 typed on Calibration / inputs, divided by 100. Inlet flow is the inlet at exit, in SLPM, and inlet K is 1. Outlet flow is the product-gas mass flow at the injection, in SLPM. Carbon conversion (%) = 100 × (inlet flow × feed carbon − outlet flow × carbon out / 100) / (inlet flow × feed carbon). No leak is subtracted. A blank inlet at exit, a blank mass flow, or a feed with no carbon leaves the conversion blank.</td>
+      </tr>
+      <tr>
+        <td>10</td>
+        <td>Write one CSV row per injection to the injection table file. Download table sends that same file. Analysis draws each conversion against reactor temperature at exit. Color is the inlet flow at exit. The table under that graph lists temperature, pressure, inlet flow, and carbon conversion for each of those injections.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Report a ticket</h2>
+  <div class="ticket-actions">
+    <button type="button" id="open-ticket">Submit a ticket</button>
+  </div>
+</section>
+<div id="ticket-modal" class="modal" hidden>
+  <form id="ticket-form" class="modal-card">
+    <h2>Submit a ticket</h2>
+    <label class="field-label" for="ticket-email">Your email</label>
+    <input id="ticket-email" type="email" required autocomplete="email" placeholder="you@example.com" aria-label="Your email">
+    <label class="field-label" for="ticket-message">issues, comments or ideas?</label>
+    <textarea id="ticket-message" required aria-label="issues, comments or ideas?"></textarea>
+    <p id="ticket-status" class="cal-note"></p>
+    <div class="ticket-actions">
+      <button type="submit" id="ticket-send">Send</button>
+      <button type="button" id="ticket-cancel">Cancel</button>
+    </div>
+  </form>
+</div>
 <p class="credit">Developed by Dr. Julia Hasty for the Institute of Gas Innovation and Technology at the Advanced Energy Research and Technology Center. 2026</p>
 <script>
+const PUBLIC = location.pathname === "/SBU-IGIT-minipilot" || location.pathname.startsWith("/SBU-IGIT-minipilot/");
+const ROOT = PUBLIC ? "/SBU-IGIT-minipilot" : "";
+let liveLink = null;
+let appliedVarsSig = "";
+if (PUBLIC) {
+  document.body.classList.add("public-view");
+  document.querySelectorAll("img[src^='/']").forEach((img) => {
+    img.src = ROOT + img.getAttribute("src");
+  });
+  document.querySelectorAll("#cal input, #cal textarea").forEach((el) => { el.readOnly = true; });
+  document.querySelectorAll("#cal select").forEach((el) => { el.disabled = true; });
+}
 const GROUPS = [
   ["temp", "Temperature", "°C"],
   ["pressure", "Pressure", ""],
@@ -363,6 +921,34 @@ const GROUPS = [
 const PALETTE = ["#93c5fd", "#fdba74", "#5eead4", "#f9a8d4", "#bef264", "#d8b4fe", "#fde68a", "#7dd3fc", "#fda4af", "#e7e5e4"];
 const hidden = new Set();
 let data = null;
+let convPoints = [];
+let seenPlotKeys = null;
+const litPoints = new Map();
+const litGroups = new Map();
+let glowRaf = 0;
+let audioCtx = null;
+const GLOW_MS = 4500;
+const GLOW_CYCLE_MS = 900;
+let convHover = null;
+let balanceHover = null;
+const HIDDEN_AT = [
+  "2026-11-21T10:39:20", "2026-11-21T10:50:20", "2026-11-21T11:01:21", "2026-11-21T11:12:22",
+  "2026-11-21T11:23:23", "2026-11-21T11:34:24", "2026-11-21T11:45:25", "2026-11-21T11:56:26",
+  "2026-11-21T12:07:27", "2026-11-21T12:18:28", "2026-11-21T12:41:48", "2026-11-21T12:52:49",
+  "2026-11-21T13:03:50", "2026-11-21T13:14:51", "2026-11-21T13:25:52", "2026-11-21T13:36:53",
+  "2026-11-21T13:47:54", "2026-11-21T13:58:55", "2026-11-21T14:09:56", "2026-11-21T14:20:57",
+  "2026-11-21T14:54:00", "2026-11-21T15:49:05", "2026-11-21T18:45:21"
+];
+const hiddenInjections = new Set(HIDDEN_AT);
+const BALANCE_BANDS = [
+  { t0: "2026-11-21T10:39:00", t1: "2026-11-21T11:20:00", kind: "bypass", label: "Bypass to pressure" },
+  { t0: "2026-11-21T12:32:40", t1: "2026-11-21T12:42:00", kind: "blow", label: "Blowdown 909→269 psi" },
+  { t0: "2026-11-21T14:06:00", t1: "2026-11-21T14:21:00", kind: "bypass", label: "Bypass and relief" },
+  { t0: "2026-11-21T14:52:00", t1: "2026-11-21T14:56:00", kind: "pair", label: "Outlet dip" },
+  { t0: "2026-11-21T15:44:00", t1: "2026-11-21T15:51:00", kind: "pair", label: "Inlet cut 504→304" },
+  { t0: "2026-11-21T18:35:00", t1: "2026-11-21T18:46:00", kind: "pair", label: "Inlet cut 504→304" },
+  { t0: "2026-11-21T20:21:50", t1: "2026-11-21T20:26:20", kind: "blow", label: "Blowdown 715→129 psi" }
+];
 let rangeKey = "60";
 let hoverX = null;
 let hoverGroup = null;
@@ -558,8 +1144,9 @@ function draw() {
   const [x0, x1] = viewBounds();
   syncSliders();
   const span = Math.max(1, x1 - x0);
-  document.querySelectorAll("section").forEach((section) => {
+  document.querySelectorAll("#charts > section, #analysis [data-group='conversion'], #analysis [data-group='balance']").forEach((section) => {
     const canvas = section.querySelector("canvas");
+    if (!canvas || canvas.clientWidth < 2) return;
     const group = section.dataset.group;
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth;
@@ -571,6 +1158,14 @@ function draw() {
     ctx.clearRect(0, 0, w, h);
     if (group === "carbon") {
       drawCarbon(ctx, w, h, x0, x1, span, start);
+      return;
+    }
+    if (group === "conversion") {
+      drawConversion(ctx, w, h);
+      return;
+    }
+    if (group === "balance") {
+      drawBalance(ctx, w, h);
       return;
     }
     const series = seriesIn(group).filter((s) => !hidden.has(s.name));
@@ -851,6 +1446,372 @@ function render() {
   draw();
 }
 
+function flowColor(t) {
+  const a = [125, 211, 252], b = [253, 186, 116];
+  const rgb = a.map((v, i) => Math.round(v + (b[i] - v) * t));
+  return "rgb(" + rgb.join(",") + ")";
+}
+
+function lightenColor(rgb, amount) {
+  const m = /rgb\((\d+),(\d+),(\d+)\)/.exec(rgb);
+  if (!m) return rgb;
+  const mix = (c) => Math.round(Number(c) + (255 - Number(c)) * amount);
+  return "rgb(" + mix(m[1]) + "," + mix(m[2]) + "," + mix(m[3]) + ")";
+}
+
+function withAlpha(rgb, alpha) {
+  const m = /rgb\((\d+),(\d+),(\d+)\)/.exec(rgb);
+  if (!m) return rgb;
+  return "rgba(" + m[1] + "," + m[2] + "," + m[3] + "," + alpha.toFixed(3) + ")";
+}
+
+function pointGlow(key) {
+  const start = litPoints.get(key);
+  if (start == null) return 0;
+  const age = performance.now() - start;
+  if (age >= GLOW_MS) return 0;
+  const phase = (age % GLOW_CYCLE_MS) / GLOW_CYCLE_MS;
+  const wave = 0.5 + 0.5 * Math.cos(phase * Math.PI * 2);
+  let edge = 1;
+  if (age > GLOW_MS - 280) edge = Math.max(0, (GLOW_MS - age) / 280);
+  return (0.3 + 0.7 * wave) * edge;
+}
+
+function glowActive() {
+  const now = performance.now();
+  let alive = false;
+  litPoints.forEach((start, key) => {
+    if (now - start >= GLOW_MS) litPoints.delete(key);
+    else alive = true;
+  });
+  litGroups.forEach((start, key) => {
+    if (now - start >= GLOW_MS) litGroups.delete(key);
+  });
+  return alive;
+}
+
+function paintConversion() {
+  const canvas = document.getElementById("conversion-canvas");
+  if (!canvas || canvas.clientWidth < 2) return;
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  const ctx = canvas.getContext("2d");
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  drawConversion(ctx, w, h, false);
+}
+
+function armGlow() {
+  if (glowRaf) return;
+  const tick = () => {
+    const alive = glowActive();
+    paintConversion();
+    if (!alive) {
+      glowRaf = 0;
+      return;
+    }
+    glowRaf = requestAnimationFrame(tick);
+  };
+  glowRaf = requestAnimationFrame(tick);
+}
+
+function unlockAudio() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  if (!audioCtx) audioCtx = new Ctx();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+}
+
+function playDing() {
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  if (!audioCtx) audioCtx = new Ctx();
+  const tone = (ctx, dest, t, freq, attack, dur, amp) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(freq, t);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(amp, t + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start(t);
+    osc.stop(t + dur + 0.06);
+  };
+  const chime = (ctx, t, freq, dur, peak, attack) => {
+    const bus = ctx.createGain();
+    bus.connect(ctx.destination);
+    bus.gain.setValueAtTime(0.0001, t);
+    bus.gain.exponentialRampToValueAtTime(peak, t + attack);
+    bus.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    tone(ctx, bus, t, freq, Math.max(0.006, attack), dur, 0.8);
+    tone(ctx, bus, t, freq * 2, 0.005, Math.min(0.4, dur * 0.32), 0.14);
+  };
+  const sound = () => {
+    const t = audioCtx.currentTime + 0.02;
+    chime(audioCtx, t, 659.25, 0.55, 0.13, 0.006);
+    chime(audioCtx, t + 0.13, 880, 1.7, 0.14, 0.008);
+  };
+  if (audioCtx.state === "suspended") audioCtx.resume().then(sound).catch(() => {});
+  else sound();
+}
+
+function noteFreshPoints(points) {
+  const plottable = (points || []).filter((p) => p.temp != null && p.x != null && p.feed != null);
+  if (seenPlotKeys == null) {
+    seenPlotKeys = new Set(plottable.map(pointKey));
+    return [];
+  }
+  const fresh = [];
+  plottable.forEach((p) => {
+    const key = pointKey(p);
+    if (seenPlotKeys.has(key)) return;
+    seenPlotKeys.add(key);
+    if (!hiddenInjections.has(key)) fresh.push(p);
+  });
+  return fresh;
+}
+
+function celebrateFresh(fresh) {
+  const now = performance.now();
+  fresh.forEach((p) => {
+    litPoints.set(pointKey(p), now);
+    if (hasAnalysisData(p)) litGroups.set(consolidateKey(p).key, now);
+  });
+  playDing();
+  armGlow();
+}
+
+document.addEventListener("pointerdown", unlockAudio);
+
+function showExcluded() {
+  const el = document.getElementById("show-excluded");
+  return !!el && el.value === "1";
+}
+
+function linFit(group) {
+  const n = group.length;
+  if (n < 2) return null;
+  let sx = 0, sy = 0, sxx = 0, sxy = 0;
+  group.forEach((p) => {
+    sx += p.temp;
+    sy += p.x;
+    sxx += p.temp * p.temp;
+    sxy += p.temp * p.x;
+  });
+  const den = n * sxx - sx * sx;
+  if (Math.abs(den) < 1e-9) return null;
+  const slope = (n * sxy - sx * sy) / den;
+  return { slope, intercept: (sy - slope * sx) / n };
+}
+
+function flowBands(pts) {
+  const groups = new Map();
+  pts.forEach((p) => {
+    const sccm = Math.round(Number(p.feed) / 100) * 100;
+    if (!groups.has(sccm)) groups.set(sccm, []);
+    groups.get(sccm).push(p);
+  });
+  const keys = [...groups.keys()].sort((a, b) => a - b);
+  const lo = keys[0];
+  const hi = keys[keys.length - 1];
+  return keys.map((sccm) => ({
+    name: sccm,
+    color: !keys.length || hi <= lo ? flowColor(0.5) : flowColor((sccm - lo) / (hi - lo)),
+    pts: groups.get(sccm)
+  }));
+}
+
+function fitEquation(fit) {
+  const slope = fit.slope;
+  const intercept = fit.intercept;
+  const slopeText = (slope < 0 ? "−" : "") + Math.abs(slope).toFixed(3);
+  const sign = intercept < 0 ? "−" : "+";
+  return "y = " + slopeText + "x " + sign + " " + Math.abs(intercept).toFixed(1);
+}
+
+function conversionLegend(bands) {
+  const el = document.getElementById("conversion-legend");
+  if (!el) return;
+  el.replaceChildren();
+  bands.forEach((band) => {
+    const fit = linFit(band.pts);
+    if (!fit) return;
+    const span = document.createElement("span");
+    const sw = document.createElement("i");
+    sw.className = "swatch";
+    sw.style.borderTopColor = band.color;
+    span.appendChild(sw);
+    span.appendChild(document.createTextNode("[" + band.name + " SCCM] " + fitEquation(fit)));
+    el.appendChild(span);
+  });
+}
+
+function drawConversion(ctx, w, h, updateLegend) {
+  const pad = { l: 72, r: 78, t: 28, b: 36 };
+  const kept = visiblePoints();
+  const excluded = showExcluded()
+    ? (convPoints || []).filter((p) => hiddenInjections.has(pointKey(p)) && p.temp != null && p.x != null && p.feed != null)
+    : [];
+  const pts = kept.concat(excluded);
+  ctx.fillStyle = "#a8a29e";
+  ctx.font = "11px Segoe UI";
+  if (!pts.length) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("No points to plot.", w / 2, h / 2);
+    return;
+  }
+  let tLo = Infinity, tHi = -Infinity, yLo = Infinity, yHi = -Infinity, fLo = Infinity, fHi = -Infinity;
+  pts.forEach((p) => {
+    if (p.temp < tLo) tLo = p.temp;
+    if (p.temp > tHi) tHi = p.temp;
+    if (p.x < yLo) yLo = p.x;
+    if (p.x > yHi) yHi = p.x;
+    if (p.feed < fLo) fLo = p.feed;
+    if (p.feed > fHi) fHi = p.feed;
+  });
+  if (tHi - tLo < 1) { tLo -= 1; tHi += 1; }
+  if (yHi - yLo < 1) { yLo -= 1; yHi += 1; }
+  tLo -= (tHi - tLo) * 0.08;
+  tHi += (tHi - tLo) * 0.08;
+  yLo -= (yHi - yLo) * 0.08;
+  yHi += (yHi - yLo) * 0.08;
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const X = (t) => pad.l + ((t - tLo) / (tHi - tLo)) * iw;
+  const Y = (v) => pad.t + (1 - (v - yLo) / (yHi - yLo)) * ih;
+  ctx.strokeStyle = "#44403c";
+  ctx.lineWidth = 1;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let g = 0; g <= 4; g++) {
+    const v = yLo + (yHi - yLo) * (g / 4);
+    const y = Y(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    ctx.fillStyle = "#a8a29e";
+    ctx.fillText(v.toFixed(0), pad.l - 6, y);
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  for (let g = 0; g <= 4; g++) {
+    const t = tLo + (tHi - tLo) * (g / 4);
+    ctx.fillStyle = "#a8a29e";
+    ctx.fillText(t.toFixed(0), X(t), pad.t + ih + 6);
+  }
+  ctx.fillText("Temperature at exit (°C)", pad.l + iw / 2, h - 14);
+  ctx.save();
+  ctx.translate(14, pad.t + ih / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = "#a8a29e";
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Carbon conversion (%)", 0, 0);
+  ctx.restore();
+  const bands = flowBands(kept);
+  if (updateLegend !== false) conversionLegend(bands);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(pad.l, pad.t, iw, ih);
+  ctx.clip();
+  bands.forEach((band) => {
+    const fit = linFit(band.pts);
+    if (!fit) return;
+    let t0 = Infinity, t1 = -Infinity;
+    band.pts.forEach((p) => {
+      if (p.temp < t0) t0 = p.temp;
+      if (p.temp > t1) t1 = p.temp;
+    });
+    ctx.beginPath();
+    ctx.strokeStyle = band.color;
+    ctx.lineWidth = 2;
+    ctx.moveTo(X(t0), Y(fit.intercept + fit.slope * t0));
+    ctx.lineTo(X(t1), Y(fit.intercept + fit.slope * t1));
+    ctx.stroke();
+  });
+  ctx.restore();
+  const barX = w - pad.r + 18;
+  const grad = ctx.createLinearGradient(0, pad.t + ih, 0, pad.t);
+  grad.addColorStop(0, flowColor(0));
+  grad.addColorStop(1, flowColor(1));
+  ctx.fillStyle = grad;
+  ctx.fillRect(barX, pad.t, 10, ih);
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#a8a29e";
+  ctx.fillText(Math.round(fHi).toString(), barX + 14, pad.t);
+  ctx.fillText(Math.round(fLo).toString(), barX + 14, pad.t + ih);
+  ctx.textBaseline = "bottom";
+  ctx.fillText("SCCM", barX, pad.t - 4);
+  let nearest = null;
+  let nearestD = 16;
+  pts.forEach((p) => {
+    const px = X(p.temp);
+    const py = Y(p.x);
+    const dropped = hiddenInjections.has(pointKey(p));
+    const t = fHi <= fLo ? 0.5 : (p.feed - fLo) / (fHi - fLo);
+    const color = flowColor(t);
+    const glow = dropped ? 0 : pointGlow(pointKey(p));
+    if (glow > 0) {
+      const radius = 12 + 16 * glow;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(pad.l, pad.t, iw, ih);
+      ctx.clip();
+      const halo = ctx.createRadialGradient(px, py, 1, px, py, radius);
+      halo.addColorStop(0, "rgba(255, 251, 235, " + (0.95 * glow).toFixed(3) + ")");
+      halo.addColorStop(0.4, withAlpha(color, 0.55 * glow));
+      halo.addColorStop(1, "rgba(255, 251, 235, 0)");
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(px, py, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.beginPath();
+    ctx.lineWidth = glow > 0 ? 2 : 1.5;
+    ctx.arc(px, py, glow > 0 ? 5 + 2.5 * glow : 5, 0, Math.PI * 2);
+    if (dropped) {
+      ctx.strokeStyle = "#fda4af";
+      ctx.stroke();
+    } else {
+      ctx.fillStyle = glow > 0 ? lightenColor(color, 0.35 + 0.5 * glow) : color;
+      ctx.strokeStyle = glow > 0 ? "#fffbeb" : "#0c0a09";
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (convHover) {
+      const d = Math.hypot(convHover.x - px, convHover.y - py);
+      if (d < nearestD) { nearestD = d; nearest = p; }
+    }
+  });
+  if (nearest) {
+    ctx.beginPath();
+    ctx.strokeStyle = "#fafaf9";
+    ctx.lineWidth = 2;
+    ctx.arc(X(nearest.temp), Y(nearest.x), 7, 0, Math.PI * 2);
+    ctx.stroke();
+    const gas = ["H2 " + (nearest.h2 == null ? "—" : nearest.h2), "CO " + (nearest.co == null ? "—" : nearest.co), "CO2 " + (nearest.co2 == null ? "—" : nearest.co2), "CH4 " + (nearest.ch4 == null ? "—" : nearest.ch4)];
+    document.getElementById("foot").textContent = [
+      nearest.file.replace(/\.rst$/i, ""),
+      nearest.temp.toFixed(1) + " °C",
+      "X " + nearest.x.toFixed(1) + "%",
+      nearest.feed.toFixed(0) + " SCCM",
+      gas.join("  ")
+    ].join("   ");
+  } else if (convHover) {
+    readout(null);
+  }
+}
+
 function colorize() {
   const count = {};
   data.series.forEach((s) => {
@@ -861,22 +1822,422 @@ function colorize() {
   });
 }
 
+function linkFresh() {
+  if (!PUBLIC) return true;
+  if (!liveLink || !liveLink.connected || !liveLink.receivedAt) return false;
+  const at = Date.parse(liveLink.receivedAt);
+  return Number.isFinite(at) && Date.now() - at < 20000;
+}
 function statusLine() {
+  const dot = document.querySelector("#sub .live-dot");
+  const label = document.getElementById("sub-text");
+  if (!data) {
+    dot.hidden = true;
+    label.textContent = PUBLIC ? "Waiting for the lab computer to connect." : "Loading today’s run…";
+    return;
+  }
+  const fresh = linkFresh();
+  dot.hidden = !fresh;
   const start = parseLocal(data.start);
   const updated = parseLocal(data.updated);
-  document.querySelector("#sub .live-dot").hidden = false;
   const following = rangeKey === "live" || rangeKey === "60" || rangeKey === "run";
-  document.getElementById("sub-text").textContent =
-    (following ? "Plotting new samples through " : "Plotted through ") +
+  let text = (following ? "Plotting new samples through " : "Plotted through ") +
     fmtTime(updated.getTime(), true) + " (EST)" +
     " · " + data.samples.toLocaleString() + " samples since " +
     fmtTime(start.getTime()) +
     " · " + data.injections.length + " GC injections";
+  if (PUBLIC && !fresh) text = "Lab offline. " + text;
+  else if (PUBLIC) text = "Live from the lab. " + text;
+  label.textContent = text;
 }
 
-async function refresh() {
-  const res = await fetch("/api/trend", { cache: "no-store" });
-  data = await res.json();
+async function refreshPoints() {
+  try {
+    const res = await fetch("/api/points", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(collectVars())
+    });
+    if (res.ok) {
+      const points = await res.json();
+      convPoints = points;
+      const fresh = noteFreshPoints(points);
+      if (fresh.length) celebrateFresh(fresh);
+    }
+    fillAnalysis();
+  } catch (err) { /* keep the last points */ }
+}
+
+function feedSubtitle() {
+  const parts = [];
+  [["H2", "feed-h2"], ["CO", "feed-co"], ["CO2", "feed-co2"], ["CH4", "feed-ch4"], ["N2", "feed-n2"]].forEach(([name, id]) => {
+    const v = document.getElementById(id).value.trim();
+    if (v !== "") parts.push(name + " " + v + "%");
+  });
+  extraGases().forEach((g) => {
+    if (g.name) parts.push(g.name + " " + (g.percent == null ? "" : g.percent) + "%");
+  });
+  return "Feed gas: " + (parts.length ? parts.join(", ") : "—");
+}
+
+function pointKey(p) { return p.when || p.file; }
+
+function drawBalance(ctx, w, h) {
+  const pad = { l: 72, r: 16, t: 22, b: 36 };
+  const all = (convPoints || []).filter((p) => p.when).slice().sort((a, b) => String(a.when).localeCompare(String(b.when)));
+  const kept = all.filter((p) => !hiddenInjections.has(pointKey(p)));
+  const pts = showExcluded() ? all : kept;
+  const onRun = pts.some((p) => String(p.when).indexOf("2026-11-21") === 0);
+  const bands = onRun ? BALANCE_BANDS : [];
+  ctx.fillStyle = "#a8a29e";
+  ctx.font = "11px Segoe UI";
+  if (!pts.length) {
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("No points to plot.", w / 2, h / 2);
+    return;
+  }
+  const times = pts.map((p) => parseLocal(p.when).getTime());
+  bands.forEach((b) => {
+    times.push(parseLocal(b.t0).getTime(), parseLocal(b.t1).getTime());
+  });
+  let xLo = Math.min.apply(null, times);
+  let xHi = Math.max.apply(null, times);
+  if (xHi - xLo < 60000) { xLo -= 60000; xHi += 60000; }
+  const span = xHi - xLo;
+  xLo -= span * 0.02;
+  xHi += span * 0.02;
+  let yHi = 1;
+  pts.forEach((p) => {
+    if (p.cin != null && p.cin > yHi) yHi = p.cin;
+    if (p.cout != null && p.cout > yHi) yHi = p.cout;
+  });
+  yHi *= 1.12;
+  const iw = w - pad.l - pad.r;
+  const ih = h - pad.t - pad.b;
+  const X = (ms) => pad.l + ((ms - xLo) / (xHi - xLo)) * iw;
+  const Y = (v) => pad.t + (1 - v / yHi) * ih;
+  const fills = { bypass: "rgba(253,186,116,0.16)", blow: "rgba(251,113,133,0.22)", pair: "rgba(125,211,252,0.16)" };
+  bands.forEach((b) => {
+    const x0 = X(parseLocal(b.t0).getTime());
+    const x1 = X(parseLocal(b.t1).getTime());
+    ctx.fillStyle = fills[b.kind] || fills.pair;
+    ctx.fillRect(x0, pad.t, Math.max(2, x1 - x0), ih);
+    if (x1 - x0 > 64) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0, pad.t, x1 - x0, ih);
+      ctx.clip();
+      ctx.fillStyle = "#e7e5e4";
+      ctx.font = "10px Segoe UI";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText(b.label, (x0 + x1) / 2, pad.t + 4);
+      ctx.restore();
+    }
+  });
+  ctx.strokeStyle = "#44403c";
+  ctx.lineWidth = 1;
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  ctx.font = "11px Segoe UI";
+  for (let g = 0; g <= 4; g++) {
+    const v = yHi * (g / 4);
+    const y = Y(v);
+    ctx.beginPath();
+    ctx.moveTo(pad.l, y);
+    ctx.lineTo(w - pad.r, y);
+    ctx.stroke();
+    ctx.fillStyle = "#a8a29e";
+    ctx.fillText(v.toFixed(0), pad.l - 6, y);
+  }
+  ctx.textAlign = "center";
+  ctx.textBaseline = "top";
+  for (let g = 0; g <= 6; g++) {
+    const ms = xLo + (xHi - xLo) * (g / 6);
+    ctx.fillStyle = "#a8a29e";
+    ctx.fillText(fmtTime(ms), X(ms), pad.t + ih + 8);
+  }
+  ctx.save();
+  ctx.translate(14, pad.t + ih / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = "#a8a29e";
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("Carbon (sccm)", 0, 0);
+  ctx.restore();
+  function strokeSeries(key, color) {
+    ctx.beginPath();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5;
+    let pen = false;
+    kept.forEach((p) => {
+      if (p[key] == null) { pen = false; return; }
+      const px = X(parseLocal(p.when).getTime());
+      const py = Y(p[key]);
+      if (!pen) { ctx.moveTo(px, py); pen = true; }
+      else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  }
+  strokeSeries("cin", "#fdba74");
+  strokeSeries("cout", "#7dd3fc");
+  let nearest = null;
+  let nearestD = 16;
+  pts.forEach((p) => {
+    const px = X(parseLocal(p.when).getTime());
+    const py = p.cout != null ? Y(p.cout) : (p.cin != null ? Y(p.cin) : null);
+    if (py == null) return;
+    const dropped = hiddenInjections.has(pointKey(p));
+    ctx.beginPath();
+    ctx.lineWidth = 1.5;
+    ctx.arc(px, py, dropped ? 4 : 3.5, 0, Math.PI * 2);
+    if (dropped) {
+      ctx.strokeStyle = "#fda4af";
+      ctx.stroke();
+    } else {
+      ctx.strokeStyle = "#0c0a09";
+      ctx.fillStyle = p.cout != null ? "#7dd3fc" : "#fdba74";
+      ctx.fill();
+      ctx.stroke();
+    }
+    if (balanceHover) {
+      const d = Math.hypot(balanceHover.x - px, balanceHover.y - py);
+      if (d < nearestD) { nearestD = d; nearest = p; }
+    }
+  });
+  const readout = document.getElementById("balance-readout");
+  if (nearest && readout) {
+    const gap = nearest.cin != null && nearest.cout != null ? nearest.cin - nearest.cout : null;
+    readout.textContent = [
+      nearest.file.replace(/\.rst$/i, ""),
+      "in " + (nearest.cin == null ? "—" : nearest.cin.toFixed(1)),
+      "out " + (nearest.cout == null ? "—" : nearest.cout.toFixed(1)),
+      "gap " + (gap == null ? "—" : gap.toFixed(1)) + " sccm",
+      hiddenInjections.has(pointKey(nearest)) ? "hidden" : "kept"
+    ].join("   ");
+  } else if (balanceHover && readout) {
+    readout.textContent = "Move across the graph to read an injection.";
+  }
+}
+
+function shortWhen(when) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}:\d{2}:\d{2})/.exec(String(when));
+  if (!m) return String(when).replace("T", " ");
+  return m[2] + "/" + m[3] + "/" + m[1].slice(2) + " " + m[4];
+}
+
+function visiblePoints() {
+  return (convPoints || []).filter((p) => !hiddenInjections.has(pointKey(p)) && p.temp != null && p.x != null && p.feed != null);
+}
+
+function analysisRow(p, hidden) {
+  const tr = document.createElement("tr");
+  if (hidden) tr.className = "is-hidden";
+  const tdCheck = document.createElement("td");
+  tdCheck.className = "hide";
+  const label = document.createElement("label");
+  label.className = "hide-box";
+  const box = document.createElement("input");
+  box.type = "checkbox";
+  box.checked = hidden;
+  box.setAttribute("aria-label", (hidden ? "Show " : "Hide ") + shortWhen(p.when));
+  const mark = document.createElement("span");
+  mark.setAttribute("aria-hidden", "true");
+  box.addEventListener("change", () => {
+    const key = pointKey(p);
+    if (box.checked) hiddenInjections.add(key);
+    else hiddenInjections.delete(key);
+    fillAnalysis();
+    if (data) draw();
+  });
+  label.appendChild(box);
+  label.appendChild(mark);
+  tdCheck.appendChild(label);
+  tr.appendChild(tdCheck);
+  const whole = (v) => v == null || v === "" ? "" : Number(v).toFixed(0);
+  const litAt = litPoints.get(pointKey(p));
+  const cells = [shortWhen(p.when), whole(p.temp), whole(p.press), whole(p.feed), p.x == null ? "" : Number(p.x).toFixed(1)];
+  cells.forEach((text, i) => {
+    const td = document.createElement("td");
+    if (i === 0) td.className = "when";
+    td.textContent = text;
+    markLit(td, litAt);
+    tr.appendChild(td);
+  });
+  return tr;
+}
+
+function hasAnalysisData(p) {
+  return [p.temp, p.press, p.feed, p.x].every((v) => v != null && v !== "" && Number.isFinite(Number(v)));
+}
+
+function consolidateOn() {
+  const el = document.getElementById("consolidate");
+  return !!el && el.value === "1";
+}
+
+function setAnalysisHead(consolidated) {
+  const table = document.getElementById("analysis-table");
+  const head = table ? table.querySelector("thead tr") : null;
+  if (!head) return;
+  table.classList.toggle("is-consolidated", consolidated);
+  head.replaceChildren();
+  const labels = consolidated
+    ? ["Pressure (psi)", "Temperature (°C)", "Flow rate (SCCM)", "Carbon conversion (%)"]
+    : ["Hide", "Injection", "Temperature (°C)", "Pressure (psi)", "SCCM", "Carbon conversion (%)"];
+  labels.forEach((text, i) => {
+    const th = document.createElement("th");
+    if (consolidated && (i === 0 || i === 1)) th.className = "range";
+    else if (!consolidated && i === 0) th.className = "hide";
+    else if (!consolidated && i === 1) th.className = "when";
+    th.textContent = text;
+    head.appendChild(th);
+  });
+}
+
+function consolidateKey(p) {
+  const temp = Math.round(Number(p.temp));
+  const press = Math.round(Number(p.press));
+  const t0 = Math.floor(temp / 10) * 10;
+  const p0 = Math.floor(press / 100) * 100;
+  const sccm = Math.round(Number(p.feed) / 100) * 100;
+  return { key: p0 + "|" + sccm + "|" + t0, t0, p0, sccm };
+}
+
+function markLit(td, start) {
+  if (start == null || performance.now() - start >= GLOW_MS) return;
+  td.classList.add("is-lit");
+  td.style.animationDelay = (-(performance.now() - start) / 1000) + "s";
+}
+
+function glowStartFor(keys) {
+  let start = null;
+  const now = performance.now();
+  keys.forEach((key) => {
+    const t = litGroups.get(key);
+    if (t == null || now - t >= GLOW_MS) return;
+    if (start == null || t > start) start = t;
+  });
+  return start;
+}
+
+function fillConsolidated(body, rows) {
+  const groups = new Map();
+  rows.forEach((p) => {
+    if (!hasAnalysisData(p) || hiddenInjections.has(pointKey(p))) return;
+    const bin = consolidateKey(p);
+    let g = groups.get(bin.key);
+    if (!g) {
+      g = { key: bin.key, t0: bin.t0, p0: bin.p0, sccm: bin.sccm, sum: 0, n: 0, xs: [] };
+      groups.set(bin.key, g);
+    }
+    g.sum += Number(p.x);
+    g.n += 1;
+    g.xs.push(Number(p.x));
+  });
+  const plusMinus = (g) => {
+    const mean = g.sum / g.n;
+    let spread = 0;
+    if (g.n > 1) {
+      const ss = g.xs.reduce((acc, x) => acc + (x - mean) * (x - mean), 0);
+      spread = Math.sqrt(ss / (g.n - 1));
+    }
+    return mean.toFixed(1) + " ± " + spread.toFixed(1);
+  };
+  const items = [...groups.values()]
+    .sort((a, b) => a.p0 - b.p0 || a.t0 - b.t0 || a.sccm - b.sccm);
+  const means = items.map((g) => g.sum / g.n);
+  const convLo = Math.min(...means);
+  const convHi = Math.max(...means);
+  const flowLo = Math.min(...items.map((g) => g.sccm));
+  const flowHi = Math.max(...items.map((g) => g.sccm));
+  const tempLo = Math.min(...items.map((g) => g.t0));
+  const tempHi = Math.max(...items.map((g) => g.t0));
+  const unit = (v, lo, hi) => hi === lo ? 0.5 : (v - lo) / (hi - lo);
+  const mix = (a, b, t) => "rgb(" + a.map((v, i) => Math.round(v + (b[i] - v) * t)).join(",") + ")";
+  const convBg = (t) => mix([186, 230, 253], [8, 47, 73], t);
+  const inkOn = (rgb) => {
+    const m = /rgb\((\d+),(\d+),(\d+)\)/.exec(rgb);
+    if (!m) return "#fafaf9";
+    const lin = (c) => {
+      const x = Number(c) / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    };
+    const L = 0.2126 * lin(m[1]) + 0.7152 * lin(m[2]) + 0.0722 * lin(m[3]);
+    return L > 0.42 ? "#1c1917" : "#fafaf9";
+  };
+  const tempBg = (t) => {
+    const cool = [125, 211, 252];
+    const warm = [248, 113, 113];
+    const rgb = cool.map((v, i) => Math.round(v + (warm[i] - v) * t));
+    return "rgba(" + rgb.join(",") + ",0.5)";
+  };
+  const cells = items.map((g) => [g.p0 + "–" + (g.p0 + 100), g.t0 + "–" + (g.t0 + 10), String(g.sccm), plusMinus(g)]);
+  const span = cells.map((row) => row.map(() => 1));
+  for (let col = 0; col < 4; col++) {
+    let i = 0;
+    while (i < cells.length) {
+      let j = i + 1;
+      while (j < cells.length && cells[j][col] === cells[i][col] && cells[j].slice(0, col).every((v, c) => v === cells[i][c])) j++;
+      span[i][col] = j - i;
+      for (let k = i + 1; k < j; k++) span[k][col] = 0;
+      i = j;
+    }
+  }
+  cells.forEach((row, i) => {
+    const tr = document.createElement("tr");
+    row.forEach((text, col) => {
+      if (!span[i][col]) return;
+      const td = document.createElement("td");
+      if (span[i][col] > 1) td.rowSpan = span[i][col];
+      if (col === 0 || col === 1) td.className = "range";
+      if (col === 1) td.style.background = tempBg(unit(items[i].t0, tempLo, tempHi));
+      if (col === 2) {
+        td.classList.add("flow");
+        const flowBg = flowColor(unit(items[i].sccm, flowLo, flowHi));
+        td.style.background = flowBg;
+        td.style.color = inkOn(flowBg);
+      }
+      if (col === 3) {
+        const bg = convBg(unit(means[i], convLo, convHi));
+        td.style.background = bg;
+        td.style.color = inkOn(bg);
+      }
+      const covered = [];
+      for (let k = i; k < i + span[i][col]; k++) covered.push(items[k].key);
+      markLit(td, glowStartFor(covered));
+      td.textContent = text;
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+}
+
+function fillAnalysis() {
+  const note = document.getElementById("analysis-feed");
+  if (note) note.textContent = feedSubtitle();
+  const body = document.querySelector("#analysis-table tbody");
+  if (!body) return;
+  const rows = (convPoints || []).slice().sort((a, b) => String(a.when).localeCompare(String(b.when)));
+  const consolidated = consolidateOn();
+  setAnalysisHead(consolidated);
+  body.replaceChildren();
+  if (consolidated) {
+    fillConsolidated(body, rows);
+    return;
+  }
+  const reveal = showExcluded();
+  rows.forEach((p) => {
+    if (!hasAnalysisData(p)) return;
+    const hidden = hiddenInjections.has(pointKey(p));
+    if (hidden && !reveal) return;
+    body.appendChild(analysisRow(p, hidden));
+  });
+}
+
+function drawSnapshot() {
   colorize();
   statusLine();
   const sig = data.series.map((s) => s.group + ":" + s.name).join("|");
@@ -887,6 +2248,47 @@ async function refresh() {
     draw();
   }
   if (hoverX != null) readout(hoverX);
+  updatePfd();
+}
+async function refreshPublic() {
+  const res = await fetch(ROOT + "/api/snapshot", { cache: "no-store" });
+  if (!res.ok) throw new Error("The public snapshot is not available (" + res.status + ")");
+  const snap = await res.json();
+  liveLink = snap;
+  if (!snap.trend) {
+    data = null;
+    convPoints = [];
+    statusLine();
+    return;
+  }
+  const varsSig = JSON.stringify(snap.vars || null);
+  if (varsSig !== appliedVarsSig) {
+    appliedVarsSig = varsSig;
+    if (snap.vars) applyVars(snap.vars);
+  }
+  data = snap.trend;
+  convPoints = Array.isArray(snap.points) ? snap.points : [];
+  const fresh = noteFreshPoints(convPoints);
+  if (fresh.length) celebrateFresh(fresh);
+  fillAnalysis();
+  drawSnapshot();
+}
+async function refreshLocal() {
+  const res = await fetch("/api/trend", { cache: "no-store" });
+  if (!res.ok) throw new Error("The lab server did not return the trend (" + res.status + ")");
+  data = await res.json();
+  await refreshPoints();
+  drawSnapshot();
+  await refreshPublishStatus();
+}
+async function refresh() {
+  try {
+    if (PUBLIC) await refreshPublic();
+    else await refreshLocal();
+  } catch (err) {
+    document.querySelector("#sub .live-dot").hidden = true;
+    document.getElementById("sub-text").textContent = err && err.message ? err.message : String(err);
+  }
 }
 
 document.getElementById("ranges").addEventListener("click", (ev) => {
@@ -1056,28 +2458,260 @@ async function refreshVarList() {
 document.getElementById("feed-add").addEventListener("click", () => {
   addFeedGas("", null).focus();
 });
+let pointTimer = null;
 document.getElementById("cal").addEventListener("input", () => {
   feedCheck();
   localStorage.setItem("minipilot-run-vars", JSON.stringify(collectVars()));
+  clearTimeout(pointTimer);
+  pointTimer = setTimeout(() => { refreshPoints().then(() => { if (data) draw(); }); }, 400);
 });
-document.getElementById("tab-trend").addEventListener("click", () => {
-  document.getElementById("tab-trend").classList.add("on");
-  document.getElementById("tab-cal").classList.remove("on");
-  document.getElementById("window").hidden = false;
-  document.getElementById("charts").hidden = false;
-  document.getElementById("foot").hidden = false;
-  document.getElementById("cal").hidden = true;
+function seriesLatest(name) {
+  if (!data || !data.series) return null;
+  const s = data.series.find((row) => row.name === name || row.name.indexOf(name + " /") === 0);
+  if (!s || !s.y) return null;
+  for (let i = s.y.length - 1; i >= 0; i--) {
+    if (s.y[i] != null) return { value: s.y[i], series: s };
+  }
+  return null;
+}
+function pfdNum(v) {
+  if (v == null || !Number.isFinite(Number(v))) return "—";
+  const n = Number(v);
+  const a = Math.abs(n);
+  if (a >= 100) return n.toFixed(0);
+  if (a >= 10) return n.toFixed(1);
+  return n.toFixed(2);
+}
+function updatePfd() {
+  const set = (id, text) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = text;
+  };
+  const press = seriesLatest("reactor pressure");
+  set("pfd-press", press ? pfdNum(shown(press.series, press.value)) + " " + pressUnit : "—");
+  const temp = seriesLatest("Reactor");
+  set("pfd-rt", temp ? pfdNum(temp.value) + " °C" : "—");
+  const heat = seriesLatest("Reactor output");
+  set("pfd-rheat", heat ? pfdNum(heat.value) + " %" : "—");
+  const ip = seriesLatest("Pressure output");
+  set("pfd-ip", ip ? pfdNum(ip.value) + " %" : "—");
+  const when = document.getElementById("pfd-when");
+  if (when) {
+    when.textContent = data && data.updated
+      ? "Latest sample " + data.updated.replace("T", " ") + ". Blue pills follow the trend. Gray pills are on the drawing and are not in the live log."
+      : "Latest sample loads with the trend.";
+  }
+}
+function showPfdConfig(which) {
+  const stirred = which === "stirred";
+  document.getElementById("pfd-stirred").classList.toggle("on", stirred);
+  document.getElementById("pfd-packed").classList.toggle("on", !stirred);
+  document.getElementById("pfd-stirred").setAttribute("aria-selected", stirred ? "true" : "false");
+  document.getElementById("pfd-packed").setAttribute("aria-selected", stirred ? "false" : "true");
+  document.getElementById("pfd-stirred-view").hidden = !stirred;
+  document.getElementById("pfd-packed-view").hidden = stirred;
+}
+function showTab(which) {
+  const trend = which === "trend";
+  const analysis = which === "analysis";
+  const cal = which === "cal";
+  const info = which === "info";
+  const pfd = which === "pfd";
+  document.getElementById("tab-trend").classList.toggle("on", trend);
+  document.getElementById("tab-pfd").classList.toggle("on", pfd);
+  document.getElementById("tab-analysis").classList.toggle("on", analysis);
+  document.getElementById("tab-cal").classList.toggle("on", cal);
+  document.getElementById("tab-info").classList.toggle("on", info);
+  document.getElementById("window").hidden = !trend;
+  document.getElementById("charts").hidden = !trend;
+  document.getElementById("foot").hidden = !trend;
+  document.getElementById("analysis").hidden = !analysis;
+  document.getElementById("cal").hidden = !cal;
+  document.getElementById("info").hidden = !info;
+  document.getElementById("pfd").hidden = !pfd;
+  if (trend || analysis) draw();
+  if (analysis) fillAnalysis();
+  if (pfd) updatePfd();
+  if (cal) refreshVarList().catch((err) => varStatus(String(err)));
+  if (info) loadPaths().catch((err) => pathStatus(String(err)));
+}
+const PATH_KEYS = ["specview", "cole", "gc", "calibration", "injectionTable"];
+let pathValues = {};
+function pathStatus(text) { document.getElementById("path-status").textContent = text; }
+function fillPaths(paths) {
+  pathValues = paths;
+  PATH_KEYS.forEach((key) => {
+    const el = document.getElementById("path-" + key);
+    if (!el || el.dataset.editing === "1") return;
+    el.textContent = paths[key] || "";
+  });
+  const note = document.getElementById("var-folder-note");
+  if (note && paths.calibration) note.textContent = "Saved in " + paths.calibration + ".";
+}
+async function loadPaths() {
+  const res = await fetch("/api/paths", { cache: "no-store" });
+  const body = await res.json();
+  if (!res.ok) throw new Error(body.error || "Could not read locations");
+  fillPaths(body);
+}
+function pathButtons(key) {
+  return {
+    change: document.querySelector('#info button[data-key="' + key + '"][data-act="change"]'),
+    cancel: document.querySelector('#info button[data-key="' + key + '"][data-act="cancel"]')
+  };
+}
+function closePathEdit(key) {
+  const el = document.getElementById("path-" + key);
+  el.dataset.editing = "";
+  el.textContent = pathValues[key] || "";
+  const buttons = pathButtons(key);
+  buttons.change.textContent = "Change";
+  buttons.change.dataset.mode = "";
+  buttons.cancel.hidden = true;
+}
+document.getElementById("info").addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("button");
+  if (!btn || !btn.dataset.key) return;
+  const key = btn.dataset.key;
+  const el = document.getElementById("path-" + key);
+  const buttons = pathButtons(key);
+  if (btn.dataset.act === "cancel") { closePathEdit(key); pathStatus(""); return; }
+  if (buttons.change.dataset.mode !== "save") {
+    el.dataset.editing = "1";
+    const input = document.createElement("input");
+    input.type = "text";
+    input.value = pathValues[key] || "";
+    input.setAttribute("aria-label", "New location");
+    el.textContent = "";
+    el.appendChild(input);
+    input.focus();
+    input.select();
+    buttons.change.textContent = "Save";
+    buttons.change.dataset.mode = "save";
+    buttons.cancel.hidden = false;
+    return;
+  }
+  const input = el.querySelector("input");
+  const next = input ? input.value.trim() : "";
+  if (!next) { pathStatus("Enter a location"); return; }
+  pathStatus("Saving…");
+  try {
+    const res = await fetch("/api/paths", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ key: key, path: next })
+    });
+    const body = await res.json();
+    if (!res.ok) { pathStatus(body.error || "Save failed"); return; }
+    el.dataset.editing = "";
+    buttons.change.textContent = "Change";
+    buttons.change.dataset.mode = "";
+    buttons.cancel.hidden = true;
+    fillPaths(body);
+    pathStatus("Updated " + next);
+  } catch (err) {
+    pathStatus(String(err));
+  }
+});
+function ticketStatus(text) { document.getElementById("ticket-status").textContent = text; }
+function closeTicket() {
+  document.getElementById("ticket-modal").hidden = true;
+}
+document.getElementById("open-ticket").addEventListener("click", () => {
+  ticketStatus("");
+  document.getElementById("ticket-modal").hidden = false;
+  document.getElementById("ticket-email").focus();
+});
+document.getElementById("ticket-cancel").addEventListener("click", closeTicket);
+document.getElementById("ticket-modal").addEventListener("click", (ev) => {
+  if (ev.target.id === "ticket-modal") closeTicket();
+});
+document.getElementById("ticket-form").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  const email = document.getElementById("ticket-email").value.trim();
+  const message = document.getElementById("ticket-message").value.trim();
+  if (!email) { ticketStatus("Enter an email address so we can write back"); return; }
+  if (!message) { ticketStatus("Enter the issues, comments, or ideas"); return; }
+  const send = document.getElementById("ticket-send");
+  send.disabled = true;
+  ticketStatus("Sending…");
+  try {
+    const res = await fetch("/api/support", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, message: message })
+    });
+    const body = await res.json();
+    if (!res.ok) { ticketStatus(body.error || "Could not file the request"); return; }
+    const mailto = "mailto:" + body.to
+      + "?subject=" + encodeURIComponent(body.subject)
+      + "&body=" + encodeURIComponent(body.mailBody);
+    const mailLink = document.createElement("a");
+    mailLink.href = mailto;
+    mailLink.target = "_blank";
+    mailLink.rel = "noopener";
+    document.body.appendChild(mailLink);
+    mailLink.click();
+    mailLink.remove();
+    const status = document.getElementById("ticket-status");
+    status.textContent = "";
+    status.append("Filed as GitHub issue #" + body.number + ". ");
+    const link = document.createElement("a");
+    link.href = body.url;
+    link.target = "_blank";
+    link.rel = "noopener";
+    link.textContent = "Open the issue";
+    status.appendChild(link);
+    status.append(". ");
+    const again = document.createElement("a");
+    again.href = mailto;
+    again.textContent = "Open the email to jay@jayhasty.com";
+    status.appendChild(again);
+    status.append(".");
+    document.getElementById("ticket-message").value = "";
+  } catch (err) {
+    ticketStatus(String(err));
+  } finally {
+    send.disabled = false;
+  }
+});
+document.getElementById("consolidate").addEventListener("input", () => fillAnalysis());
+document.getElementById("show-excluded").addEventListener("input", () => {
+  const on = showExcluded();
+  document.getElementById("show-excluded-label").textContent = on ? "Shown" : "Hidden";
+  fillAnalysis();
+  if (data) draw();
+});
+document.getElementById("tab-trend").addEventListener("click", () => showTab("trend"));
+document.getElementById("tab-pfd").addEventListener("click", () => showTab("pfd"));
+document.getElementById("pfd-stirred").addEventListener("click", () => showPfdConfig("stirred"));
+document.getElementById("pfd-packed").addEventListener("click", () => showPfdConfig("packed"));
+document.getElementById("tab-analysis").addEventListener("click", () => showTab("analysis"));
+document.getElementById("tab-cal").addEventListener("click", () => showTab("cal"));
+document.getElementById("conversion-canvas").addEventListener("mousemove", (ev) => {
+  const rect = ev.currentTarget.getBoundingClientRect();
+  convHover = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+  hoverGroup = "conversion";
   draw();
 });
-document.getElementById("tab-cal").addEventListener("click", () => {
-  document.getElementById("tab-cal").classList.add("on");
-  document.getElementById("tab-trend").classList.remove("on");
-  document.getElementById("window").hidden = true;
-  document.getElementById("charts").hidden = true;
-  document.getElementById("foot").hidden = true;
-  document.getElementById("cal").hidden = false;
-  refreshVarList().catch((err) => varStatus(String(err)));
+document.getElementById("conversion-canvas").addEventListener("mouseleave", () => {
+  convHover = null;
+  hoverGroup = null;
+  readout(null);
+  draw();
 });
+document.getElementById("balance-canvas").addEventListener("mousemove", (ev) => {
+  const rect = ev.currentTarget.getBoundingClientRect();
+  balanceHover = { x: ev.clientX - rect.left, y: ev.clientY - rect.top };
+  draw();
+});
+document.getElementById("balance-canvas").addEventListener("mouseleave", () => {
+  balanceHover = null;
+  const readout = document.getElementById("balance-readout");
+  if (readout) readout.textContent = "Move across the graph to read an injection.";
+  draw();
+});
+document.getElementById("tab-info").addEventListener("click", () => showTab("info"));
 document.getElementById("var-save").addEventListener("click", async () => {
   const res = await fetch("/api/vars/save", {
     method: "POST",
@@ -1144,8 +2778,335 @@ try {
   if (draft) applyVars(JSON.parse(draft));
 } catch (err) { /* keep the blank sheet */ }
 
-refresh();
-setInterval(refresh, 3000);
+/* Floating lab notes. Text is stored in live/dev-notes.json (survives reload and
+   server restart). Position and collapsed state stay in localStorage. */
+function mountDevNotes() {
+  if (document.getElementById("minipilot-dev-notes")) return;
+  const NOTE_WIDTH = 240;
+  const HEADER_HEIGHT = 28;
+  const STORAGE_KEY = "minipilot-dev-notes-v1";
+  const SERVER_SAVE_MS = 400;
+  const PULL_MS = 12000;
+  const SYNC_CHANNEL = "minipilot-dev-notes-sync";
+
+  function defaultPosition() {
+    const bar = document.querySelector(".topbar");
+    const below = bar ? Math.round(bar.getBoundingClientRect().bottom) + 16 : 320;
+    return clampPosition(window.innerWidth - NOTE_WIDTH - 24, below);
+  }
+  function clampPosition(x, y) {
+    const maxX = Math.max(8, window.innerWidth - NOTE_WIDTH - 8);
+    const maxY = Math.max(56, window.innerHeight - HEADER_HEIGHT - 48);
+    return {
+      x: Math.max(8, Math.min(x, maxX)),
+      y: Math.max(56, Math.min(y, maxY))
+    };
+  }
+  function loadLocal() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) || {};
+        const pos = clampPosition(
+          Number.isFinite(parsed.x) ? parsed.x : defaultPosition().x,
+          Number.isFinite(parsed.y) ? parsed.y : defaultPosition().y
+        );
+        return {
+          content: typeof parsed.content === "string" ? parsed.content : "",
+          collapsed: Boolean(parsed.collapsed),
+          updatedAt: typeof parsed.updatedAt === "string" ? parsed.updatedAt : "",
+          ...pos
+        };
+      }
+    } catch (err) { /* ignore corrupt storage */ }
+    return { content: "", collapsed: false, updatedAt: "", ...defaultPosition() };
+  }
+  function saveLocal() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (err) { /* quota */ }
+  }
+  function chevron(collapsed) {
+    if (collapsed) {
+      return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>';
+    }
+    return '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+  }
+
+  let state = loadLocal();
+  let hydrated = false;
+  let dirty = false;
+  let saveTimer = null;
+  let saveInFlight = false;
+  let saveAgain = false;
+  let ackContent = null;
+  let drag = null;
+  let syncChannel = null;
+  try {
+    syncChannel = typeof BroadcastChannel !== "undefined" ? new BroadcastChannel(SYNC_CHANNEL) : null;
+  } catch (err) { syncChannel = null; }
+
+  const root = document.createElement("div");
+  root.id = "minipilot-dev-notes";
+  root.className = "dev-sticky-note";
+  root.setAttribute("role", "complementary");
+  root.setAttribute("aria-label", "Lab notes");
+  const header = document.createElement("div");
+  header.className = "dev-sticky-note__header";
+  const dragHandle = document.createElement("div");
+  dragHandle.className = "dev-sticky-note__drag";
+  const title = document.createElement("span");
+  title.className = "dev-sticky-note__title";
+  title.textContent = "LAB NOTES";
+  dragHandle.appendChild(title);
+  const collapseBtn = document.createElement("button");
+  collapseBtn.type = "button";
+  collapseBtn.className = "dev-sticky-note__collapse";
+  header.append(dragHandle, collapseBtn);
+  const body = document.createElement("div");
+  body.className = "dev-sticky-note__body";
+  const area = document.createElement("textarea");
+  area.className = "dev-sticky-note__textarea";
+  area.spellcheck = true;
+  area.placeholder = "Lab notes…";
+  area.setAttribute("aria-label", "Lab notes");
+  body.appendChild(area);
+  root.append(header, body);
+  document.body.appendChild(root);
+
+  function applyLayout() {
+    root.style.left = state.x + "px";
+    root.style.top = state.y + "px";
+    root.style.width = NOTE_WIDTH + "px";
+    root.classList.toggle("dev-sticky-note--collapsed", state.collapsed);
+    body.hidden = state.collapsed;
+    header.classList.toggle("dev-sticky-note__header--collapsed", state.collapsed);
+    collapseBtn.setAttribute("aria-label", state.collapsed ? "Expand lab notes" : "Collapse lab notes");
+    collapseBtn.innerHTML = chevron(state.collapsed);
+  }
+  function applyContent() {
+    if (area.value !== state.content) area.value = state.content;
+  }
+  function notifyPeers() {
+    try {
+      if (syncChannel) syncChannel.postMessage({
+        type: "dev-notes-updated",
+        updatedAt: state.updatedAt,
+        content: state.content
+      });
+    } catch (err) { /* channel closed */ }
+  }
+  async function persistServer(saveOpts) {
+    if (!hydrated) return;
+    if (!dirty && ackContent !== null && state.content === ackContent) return;
+    if (saveInFlight) { saveAgain = true; return; }
+    saveInFlight = true;
+    const content = state.content;
+    try {
+      const r = await fetch("/api/dev-notes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+        keepalive: Boolean(saveOpts && saveOpts.keepalive),
+        cache: "no-store"
+      });
+      const data = await r.json().catch(() => null);
+      if (data && data.ok && data.note && state.content === content) {
+        dirty = false;
+        ackContent = content;
+        state = Object.assign({}, state, { updatedAt: String(data.note.updatedAt || state.updatedAt || "") });
+        saveLocal();
+        notifyPeers();
+      }
+    } catch (err) { /* keep the local draft; retry on the next edit */ }
+    finally {
+      saveInFlight = false;
+      if (saveAgain || dirty) {
+        saveAgain = false;
+        if (dirty) persistServer(saveOpts);
+      }
+    }
+  }
+  function scheduleServerSave() {
+    saveLocal();
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      saveTimer = null;
+      persistServer();
+    }, SERVER_SAVE_MS);
+  }
+  function flushSave() {
+    if (!dirty && ackContent !== null && state.content === ackContent) return;
+    saveLocal();
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    persistServer({ keepalive: true });
+  }
+  async function hydrateFromServer() {
+    try {
+      const r = await fetch("/api/dev-notes", { cache: "no-store" });
+      const data = await r.json();
+      if (!data || !data.ok || !data.note) {
+        hydrated = true;
+        if (dirty || state.content) persistServer();
+        return;
+      }
+      const serverContent = typeof data.note.content === "string" ? data.note.content : "";
+      const serverUpdated = String(data.note.updatedAt || "");
+      const localUpdated = String(state.updatedAt || "");
+      if (dirty) {
+        hydrated = true;
+        persistServer();
+        return;
+      }
+      const preferLocal =
+        ackContent === null &&
+        Boolean(state.content) &&
+        state.content !== serverContent &&
+        (!serverContent || (localUpdated && serverUpdated && localUpdated > serverUpdated));
+      if (preferLocal) {
+        hydrated = true;
+        persistServer();
+        return;
+      }
+      const contentChanged = serverContent !== state.content;
+      state = Object.assign({}, state, {
+        content: serverContent,
+        updatedAt: serverUpdated || state.updatedAt || ""
+      });
+      ackContent = serverContent;
+      saveLocal();
+      if (contentChanged && document.activeElement !== area) applyContent();
+    } catch (err) { /* offline — keep the local draft */ }
+    finally {
+      hydrated = true;
+      if (dirty) persistServer();
+    }
+  }
+
+  applyLayout();
+  applyContent();
+
+  collapseBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    state = Object.assign({}, state, { collapsed: !state.collapsed });
+    saveLocal();
+    applyLayout();
+    if (!state.collapsed) hydrateFromServer();
+  });
+  collapseBtn.addEventListener("pointerdown", (e) => e.stopPropagation());
+
+  dragHandle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    drag = {
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: state.x,
+      origY: state.y
+    };
+    dragHandle.setPointerCapture(e.pointerId);
+  });
+  dragHandle.addEventListener("pointermove", (e) => {
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    const pos = clampPosition(drag.origX + (e.clientX - drag.startX), drag.origY + (e.clientY - drag.startY));
+    state = Object.assign({}, state, pos);
+    applyLayout();
+  });
+  function endDrag(e) {
+    if (!drag || drag.pointerId !== e.pointerId) return;
+    drag = null;
+    try { dragHandle.releasePointerCapture(e.pointerId); } catch (err) { /* already released */ }
+    saveLocal();
+  }
+  dragHandle.addEventListener("pointerup", endDrag);
+  dragHandle.addEventListener("pointercancel", endDrag);
+
+  area.addEventListener("input", () => {
+    dirty = true;
+    state = Object.assign({}, state, { content: area.value, updatedAt: new Date().toISOString() });
+    scheduleServerSave();
+  });
+  area.addEventListener("blur", () => flushSave());
+
+  if (syncChannel) {
+    syncChannel.addEventListener("message", (ev) => {
+      const msg = ev && ev.data;
+      if (!msg || msg.type !== "dev-notes-updated" || dirty) return;
+      const peerContent = typeof msg.content === "string" ? msg.content : null;
+      if (peerContent == null || peerContent === state.content) return;
+      state = Object.assign({}, state, {
+        content: peerContent,
+        updatedAt: String(msg.updatedAt || state.updatedAt || "")
+      });
+      ackContent = peerContent;
+      saveLocal();
+      if (document.activeElement !== area) applyContent();
+    });
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushSave();
+    else hydrateFromServer();
+  });
+  window.addEventListener("pagehide", () => flushSave());
+  window.addEventListener("resize", () => {
+    const pos = clampPosition(state.x, state.y);
+    state = Object.assign({}, state, pos);
+    saveLocal();
+    applyLayout();
+  });
+  setInterval(() => {
+    if (document.visibilityState === "hidden") return;
+    if (dirty || document.activeElement === area) return;
+    hydrateFromServer();
+  }, PULL_MS);
+
+  hydrateFromServer();
+}
+function paintConnect(st) {
+  const btn = document.getElementById("connect");
+  const note = document.getElementById("connect-status");
+  if (!btn || !note || !st) return;
+  btn.classList.toggle("on", !!st.enabled);
+  btn.textContent = st.enabled ? "Disconnect" : "Connect";
+  if (!st.configured) {
+    note.textContent = "Copy live/publish.json onto this computer, next to server.ps1.";
+    return;
+  }
+  if (st.lastError) note.textContent = st.lastError;
+  else if (st.enabled) note.textContent = st.lastAt ? ("Sending · last update " + st.lastAt) : "Sending to jayhasty.com/SBU-IGIT-minipilot";
+  else note.textContent = "Off. The website keeps the last snapshot.";
+}
+async function refreshPublishStatus() {
+  try {
+    const res = await fetch("/api/publish", { cache: "no-store" });
+    if (res.ok) paintConnect(await res.json());
+  } catch (err) { /* the lab page is not open on this server */ }
+}
+if (PUBLIC) {
+  refresh();
+  setInterval(refresh, 3000);
+} else {
+  mountDevNotes();
+  loadPaths().catch((err) => pathStatus(String(err)));
+  document.getElementById("connect").addEventListener("click", async () => {
+    const btn = document.getElementById("connect");
+    const turningOn = !btn.classList.contains("on");
+    const res = await fetch("/api/publish", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: turningOn, vars: collectVars() })
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      document.getElementById("connect-status").textContent = body.error || "Could not connect";
+      return;
+    }
+    paintConnect(body);
+  });
+  refreshPublishStatus();
+  refresh();
+  setInterval(refresh, 3000);
+}
 </script>
 </body>
 </html>

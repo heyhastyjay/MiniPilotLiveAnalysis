@@ -8,6 +8,35 @@ public static class Trend {
   static readonly DateTime Epoch = new DateTime(1970, 1, 1);
   const long EstOffset = 5 * 3600;
 
+  static string LabRoot() {
+    string env = Environment.GetEnvironmentVariable("LABDROP");
+    if (!string.IsNullOrEmpty(env)) return env;
+    return @"C:\LabDrop";
+  }
+
+  static string specViewDir;
+  static string coleDir;
+  static string gcDir;
+
+  public static void UseLocations(string specView, string cole, string gc) {
+    specViewDir = specView;
+    coleDir = cole;
+    gcDir = gc;
+  }
+
+  static string SpecViewDir() {
+    if (!string.IsNullOrEmpty(specViewDir)) return specViewDir;
+    return Path.Combine(LabRoot(), "SpecViewShareddata", "Copy Logs");
+  }
+  static string ColeDir() {
+    if (!string.IsNullOrEmpty(coleDir)) return coleDir;
+    return Path.Combine(LabRoot(), "ColePalmerSharedData");
+  }
+  static string GcDir() {
+    if (!string.IsNullOrEmpty(gcDir)) return gcDir;
+    return Path.Combine(LabRoot(), "TotalChromSharedData", "CopyLogs");
+  }
+
   static uint U32(byte[] d, int p) {
     return (uint)(d[p] | (d[p + 1] << 8) | (d[p + 2] << 16) | (d[p + 3] << 24));
   }
@@ -131,7 +160,7 @@ public static class Trend {
 
   static string Friendly(string name) {
     switch (name) {
-      case "Loop1.Process Value": return "Reactor temperature";
+      case "Loop1.Process Value": return "Reactor";
       case "Loop1.Working SetPoint": return "Reactor setpoint";
       case "Loop1.Output": return "Reactor output";
       case "Loop2.Process Value": return "Loop 2 temperature";
@@ -140,7 +169,7 @@ public static class Trend {
       case "Loop3.Process Value": return "Loop 3 temperature";
       case "Loop3.Working SetPoint": return "Loop 3 setpoint";
       case "Loop3.Output": return "Loop 3 output";
-      case "Loop4.Process Value": return "Pressure";
+      case "Loop4.Process Value": return "reactor pressure";
       case "Loop4.Working SetPoint": return "Pressure setpoint";
       case "Loop4.Output": return "Pressure output";
       case "Loop6.Process Value": return "Loop 6 temperature";
@@ -149,7 +178,7 @@ public static class Trend {
       case "Tags500-.Tag 11": return "Tag 11";
       case "Tags500-.Tag 16": return "Tag 16";
       case "AIs-.Module5 Inp1": return "Flow 2";
-      case "AIs-.Module5 Inp2": return "Inlet flow";
+      case "AIs-.Module5 Inp2": return "inlet flow";
       case "AIs-.Module5 Inp3": return "Pressure feedback";
       case "AIs-.Module5 Inp4": return "Module 5 input 4";
       case "AIs-.Module5 Inp5": return "Module 5 input 5";
@@ -173,6 +202,9 @@ public static class Trend {
       s.Group = "output"; s.Unit = "%"; return;
     }
     if (n.StartsWith("Module 5 input", StringComparison.Ordinal)) {
+      s.Group = "temp"; s.Unit = "°C"; return;
+    }
+    if (n.Equals("Reactor", StringComparison.OrdinalIgnoreCase)) {
       s.Group = "temp"; s.Unit = "°C"; return;
     }
     if (n.IndexOf("Inlet", StringComparison.OrdinalIgnoreCase) >= 0) {
@@ -212,14 +244,25 @@ public static class Trend {
     return value;
   }
 
-  public static string BuildJson() {
-    string svDir = @"C:\LabDrop\SpecViewShareddata\Copy Logs";
-    string logPath = Path.Combine(svDir, "26_324.LOG");
-    string livePath = Path.Combine(svDir, "livelog.csv");
-    string coleDir = @"C:\LabDrop\ColePalmerSharedData";
-    string gcDir = @"C:\LabDrop\TotalChromSharedData\CopyLogs";
+  class SvSample {
+    public long T;
+    public int Ord;
+    public Dictionary<string, double?> Values = new Dictionary<string, double?>();
+  }
 
-    byte[] data = ReadShare(logPath);
+  static List<string> SpecViewLogs(string dir) {
+    var files = new List<string>();
+    if (!Directory.Exists(dir)) return files;
+    foreach (string f in Directory.GetFiles(dir)) {
+      // Run names change. Match *.LOG, never one file name.
+      if (Path.GetExtension(f).Equals(".LOG", StringComparison.OrdinalIgnoreCase)) files.Add(f);
+    }
+    files.Sort(StringComparer.OrdinalIgnoreCase);
+    return files;
+  }
+
+  static List<SvSample> ReadSpecViewLog(byte[] data, bool clean, int ordBase) {
+    var samples = new List<SvSample>();
     int pos = 0;
     while (pos + 8 <= data.Length && !(data[pos] == 0x09 && Valid(data, pos) > 0)) pos++;
     var idName = new Dictionary<uint, string>();
@@ -233,16 +276,13 @@ public static class Trend {
       }
       pos += length;
     }
-
-    var times = new List<long>();
-    var cols = new Dictionary<string, List<double?>>();
-    foreach (var kv in idName) cols[kv.Value] = new List<double?>();
-
     while (pos + 8 <= data.Length && BlockHeader(data, pos)) {
       uint ts = U32(data, pos + 4);
       pos += 8;
       if (pos + 4 <= data.Length && data[pos] == 0x08 && data[pos + 1] == 0x00 && data[pos + 2] == 0x04 && data[pos + 3] == 0x00) pos += 4;
-      var sample = new Dictionary<string, double?>();
+      var sample = new SvSample();
+      sample.T = ts;
+      sample.Ord = ordBase + samples.Count;
       while (pos < data.Length && !BlockHeader(data, pos)) {
         int length = Valid(data, pos);
         if (length == 0) { pos = data.Length; break; }
@@ -250,19 +290,184 @@ public static class Trend {
           uint ident = U32(data, pos + 4);
           string name;
           if (idName.TryGetValue(ident, out name)) {
-            float value = BitConverter.ToSingle(data, pos + 8);
-            sample[name] = Clean(name, value);
+            float raw = BitConverter.ToSingle(data, pos + 8);
+            if (float.IsNaN(raw) || float.IsInfinity(raw)) sample.Values[name] = null;
+            else sample.Values[name] = clean ? Clean(name, raw) : (double)raw;
           }
         }
         pos += length;
       }
-      times.Add(ts);
-      foreach (var kv in cols) {
-        double? v;
-        kv.Value.Add(sample.TryGetValue(kv.Key, out v) ? v : null);
+      samples.Add(sample);
+    }
+    return samples;
+  }
+
+  static List<SvSample> ReadAllSpecViewLogs(string dir, bool clean) {
+    var all = new List<SvSample>();
+    int ord = 0;
+    foreach (string f in SpecViewLogs(dir)) {
+      try {
+        var part = ReadSpecViewLog(ReadShare(f), clean, ord);
+        ord += part.Count + 1;
+        all.AddRange(part);
+      } catch { }
+    }
+    all.Sort((a, b) => {
+      int c = a.T.CompareTo(b.T);
+      return c != 0 ? c : a.Ord.CompareTo(b.Ord);
+    });
+    return all;
+  }
+
+  class TimedValues {
+    public long T;
+    public Dictionary<string, double> Values = new Dictionary<string, double>();
+  }
+
+  class ColePoint {
+    public long T;
+    public double P, C, V, M;
+  }
+
+  // Names change every run. Match the prefix and extension, never one date.
+  static List<string> FilesByPrefix(string dir, string prefix, string extension) {
+    var files = new List<string>();
+    if (!Directory.Exists(dir)) return files;
+    foreach (string f in Directory.GetFiles(dir)) {
+      string name = Path.GetFileName(f);
+      if (name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+          && Path.GetExtension(name).Equals(extension, StringComparison.OrdinalIgnoreCase))
+        files.Add(f);
+    }
+    files.Sort(StringComparer.OrdinalIgnoreCase);
+    return files;
+  }
+
+  // "PuTTY log 2026.11.21 12:40:24" — the numbers come from the file.
+  static bool TryLogClock(string line, out DateTime t0) {
+    t0 = default(DateTime);
+    if (line == null || !line.StartsWith("=~", StringComparison.Ordinal)) return false;
+    int mark = line.IndexOf("log ", StringComparison.Ordinal);
+    if (mark < 0) return false;
+    string[] bits = line.Substring(mark + 4).Split(new[] { ' ', '.', ':', '=' }, StringSplitOptions.RemoveEmptyEntries);
+    if (bits.Length < 6) return false;
+    int y, mo, d, h, mi, s;
+    if (!int.TryParse(bits[0], out y) || !int.TryParse(bits[1], out mo) || !int.TryParse(bits[2], out d)
+        || !int.TryParse(bits[3], out h) || !int.TryParse(bits[4], out mi) || !int.TryParse(bits[5], out s)) return false;
+    try { t0 = new DateTime(y, mo, d, h, mi, s); }
+    catch (ArgumentOutOfRangeException) { return false; }
+    return true;
+  }
+
+  static void ReadColeLogs(string folder, List<long> t, List<double> p, List<double> c, List<double> v, List<double> m) {
+    var pts = new List<ColePoint>();
+    foreach (string f in FilesByPrefix(folder, "flowlog-", ".log")) {
+      string text;
+      try {
+        using (var fs = new FileStream(f, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
+      } catch { continue; }
+      DateTime? t0 = null;
+      int seq = 0;
+      foreach (string line in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) {
+        DateTime clock;
+        if (TryLogClock(line, out clock)) { t0 = clock; seq = 0; continue; }
+        if (!t0.HasValue) continue;
+        string[] parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length < 5) continue;
+        if (!parts[parts.Length - 1].Equals("N2", StringComparison.OrdinalIgnoreCase)) continue;
+        double pv, cv, vv, mv;
+        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out pv)) continue;
+        if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out cv)) continue;
+        if (!double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out vv)) continue;
+        if (!double.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out mv)) continue;
+        pts.Add(new ColePoint {
+          T = (long)(t0.Value - Epoch).TotalSeconds + seq,
+          P = pv, C = cv, V = vv, M = mv
+        });
+        seq++;
       }
     }
-    if (times.Count == 0) throw new Exception("no specview samples");
+    pts.Sort((a, b) => a.T.CompareTo(b.T));
+    foreach (var pt in pts) {
+      t.Add(pt.T); p.Add(pt.P); c.Add(pt.C); v.Add(pt.V); m.Add(pt.M);
+    }
+  }
+
+  // livelog.csv lines are "Time,HH:mm:ss" with no date. The date is the last
+  // *.LOG sample. A clock that jumps backwards has crossed midnight.
+  static List<TimedValues> ReadLiveTail(string path, long lastTs) {
+    var rows = new List<TimedValues>();
+    if (!File.Exists(path)) return rows;
+    DateTime day;
+    long cursor;
+    if (lastTs > 0) {
+      day = Epoch.AddSeconds(lastTs);
+      cursor = lastTs;
+    } else {
+      DateTime wrote = File.GetLastWriteTime(path);
+      day = new DateTime(wrote.Year, wrote.Month, wrote.Day);
+      cursor = long.MinValue;
+    }
+    TimeSpan prevClock = TimeSpan.Zero;
+    bool haveClock = false;
+    string text;
+    using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+    using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
+    foreach (string rawLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) {
+      int at = rawLine.IndexOf("Time,", StringComparison.Ordinal);
+      if (at < 0) continue;
+      string line = at > 0 ? rawLine.Substring(at) : rawLine;
+      string[] parts = line.Split(',');
+      if (parts.Length < 4 || parts[0] != "Time") continue;
+      DateTime clock;
+      if (!DateTime.TryParseExact(parts[1], "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)
+          && !DateTime.TryParseExact(parts[1], "H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)) continue;
+      if (haveClock && clock.TimeOfDay < prevClock) day = day.AddDays(1);
+      prevClock = clock.TimeOfDay;
+      haveClock = true;
+      var wall = new DateTime(day.Year, day.Month, day.Day, clock.Hour, clock.Minute, clock.Second);
+      long sec = (long)(wall - Epoch).TotalSeconds;
+      if (sec <= cursor) continue;
+      var sample = new Dictionary<string, double>();
+      for (int i = 2; i + 1 < parts.Length; i += 2) {
+        double dv;
+        if (!double.TryParse(parts[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out dv)) continue;
+        sample[parts[i]] = dv;
+      }
+      rows.Add(new TimedValues { T = sec, Values = sample });
+      cursor = sec;
+      day = wall;
+    }
+    return rows;
+  }
+
+  public static string BuildJson() {
+    string svDir = SpecViewDir();
+    string livePath = Path.Combine(svDir, "livelog.csv");
+    string coleFolder = ColeDir();
+    string gcFolder = GcDir();
+
+    var samples = ReadAllSpecViewLogs(svDir, true);
+    if (samples.Count == 0) throw new Exception("no specview samples");
+
+    var times = new List<long>();
+    var names = new List<string>();
+    var seen = new Dictionary<string, bool>();
+    foreach (var sample in samples) {
+      foreach (var kv in sample.Values) {
+        if (!seen.ContainsKey(kv.Key)) { seen[kv.Key] = true; names.Add(kv.Key); }
+      }
+    }
+    var cols = new Dictionary<string, List<double?>>();
+    foreach (string name in names) cols[name] = new List<double?>();
+    foreach (var sample in samples) {
+      times.Add(sample.T);
+      foreach (string name in names) {
+        double? v;
+        cols[name].Add(sample.Values.TryGetValue(name, out v) ? v : null);
+      }
+    }
 
     // Drop channels that never move.
     var keep = new List<string>();
@@ -284,45 +489,7 @@ public static class Trend {
     var coleC = new List<double>();
     var coleV = new List<double>();
     var coleM = new List<double>();
-    string coleFile = null;
-    if (Directory.Exists(coleDir)) {
-      foreach (string f in Directory.GetFiles(coleDir, "flowlog-2026-11-21*.log")) coleFile = f;
-    }
-    if (coleFile != null) {
-      string text;
-      using (var fs = new FileStream(coleFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-      using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
-      DateTime? t0 = null;
-      int seq = 0;
-      string[] lines = text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-      for (int li = 0; li < lines.Length; li++) {
-        string line = lines[li];
-        if (line.StartsWith("=~")) {
-          int mark = line.IndexOf("log ", StringComparison.Ordinal);
-          if (mark < 0) continue;
-          string stamp = line.Substring(mark + 4);
-          int cut = stamp.IndexOf(' ');
-          // "2026.11.21 12:40:24"
-          string[] bits = stamp.Split(new[] { ' ', '.' , ':' }, StringSplitOptions.RemoveEmptyEntries);
-          if (bits.Length >= 6) {
-            t0 = new DateTime(int.Parse(bits[0]), int.Parse(bits[1]), int.Parse(bits[2]), int.Parse(bits[3]), int.Parse(bits[4]), int.Parse(bits[5]));
-          }
-          continue;
-        }
-        if (!t0.HasValue) continue;
-        string[] parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 5) continue;
-        double p, c, v, m;
-        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out p)) continue;
-        if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out c)) continue;
-        if (!double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out v)) continue;
-        if (!double.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out m)) continue;
-        long sec = (long)(t0.Value - Epoch).TotalSeconds + seq;
-        seq++;
-        coleT.Add(sec);
-        coleP.Add(p); coleC.Add(c); coleV.Add(v); coleM.Add(m);
-      }
-    }
+    ReadColeLogs(coleFolder, coleT, coleP, coleC, coleV, coleM);
 
     Func<List<double>, List<double?>> sampleCole = (src) => {
       var y = new List<double?>(times.Count);
@@ -353,46 +520,26 @@ public static class Trend {
     }
     // Live tail is applied after duplicate channels are merged.
     var liveTail = new List<KeyValuePair<long, Dictionary<string, double>>>();
-    if (File.Exists(livePath)) {
-      string text;
-      using (var fs = new FileStream(livePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-      using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
-      var map = new Dictionary<string, string> {
-        {"L1PV", "Reactor temperature"},
-        {"L1SP", "Reactor setpoint"},
-        {"L1Out", "Reactor output"},
-        {"Flow1", "Inlet flow"},
-        {"Flow2", "Flow 2"},
-        {"PressFB", "Pressure feedback"},
-        {"L4PV", "Pressure"},
-        {"L4SP", "Pressure setpoint"},
-        {"L4Out", "Pressure output"}
-      };
-      long lastTs = times[times.Count - 1];
-      foreach (string rawLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) {
-        int at = rawLine.IndexOf("Time,", StringComparison.Ordinal);
-        if (at < 0) continue;
-        string line = at > 0 ? rawLine.Substring(at) : rawLine;
-        string[] p = line.Split(',');
-        if (p.Length < 4 || p[0] != "Time") continue;
-        DateTime clock;
-        if (!DateTime.TryParseExact(p[1], "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)
-            && !DateTime.TryParseExact(p[1], "H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)) continue;
-        var wall = new DateTime(2026, 11, 21, clock.Hour, clock.Minute, clock.Second);
-        long sec = (long)(wall - Epoch).TotalSeconds;
-        if (sec <= lastTs) continue;
-        var sample = new Dictionary<string, double>();
-        for (int i = 2; i + 1 < p.Length; i += 2) {
-          string dest;
-          if (!map.TryGetValue(p[i], out dest)) continue;
-          double dv;
-          if (!double.TryParse(p[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out dv)) continue;
-          if (dest == "Inlet flow" && (dv < -20 || dv > 5000)) continue;
-          sample[dest] = dv;
-        }
-        liveTail.Add(new KeyValuePair<long, Dictionary<string, double>>(sec, sample));
-        lastTs = sec;
+    var map = new Dictionary<string, string> {
+      {"L1PV", "Reactor"},
+      {"L1SP", "Reactor setpoint"},
+      {"L1Out", "Reactor output"},
+      {"Flow1", "inlet flow"},
+      {"Flow2", "Flow 2"},
+      {"PressFB", "Pressure feedback"},
+      {"L4PV", "reactor pressure"},
+      {"L4SP", "Pressure setpoint"},
+      {"L4Out", "Pressure output"}
+    };
+    foreach (var row in ReadLiveTail(livePath, times[times.Count - 1])) {
+      var sample = new Dictionary<string, double>();
+      foreach (var kv in row.Values) {
+        string dest;
+        if (!map.TryGetValue(kv.Key, out dest)) continue;
+        if (dest == "inlet flow" && (kv.Value < -20 || kv.Value > 5000)) continue;
+        sample[dest] = kv.Value;
       }
+      liveTail.Add(new KeyValuePair<long, Dictionary<string, double>>(row.T, sample));
     }
 
     // Collapse channels that are the same numbers under two SpecView names.
@@ -440,8 +587,8 @@ public static class Trend {
     var injCo = new List<double?>();
     var injCo2 = new List<double?>();
     var injCh4 = new List<double?>();
-    if (Directory.Exists(gcDir)) {
-      var files = new List<string>(Directory.GetFiles(gcDir, "datafile_*.rst"));
+    if (Directory.Exists(gcFolder)) {
+      var files = new List<string>(Directory.GetFiles(gcFolder, "datafile_*.rst"));
       files.Sort((a, b) => RunNo(Path.GetFileName(a)).CompareTo(RunNo(Path.GetFileName(b))));
       foreach (string f in files) {
         try {
@@ -535,13 +682,38 @@ public static class Trend {
   }
 
   static string Num2(double? v) {
-    return v.HasValue ? v.Value.ToString("0.00", CultureInfo.InvariantCulture) : "";
+    if (!v.HasValue) return "";
+    if (Math.Abs(v.Value) < 0.005) return "0.00";
+    return v.Value.ToString("0.00", CultureInfo.InvariantCulture);
   }
 
   static string Mol(double? area, double? slope, double? intercept) {
     if (!area.HasValue || !slope.HasValue || slope.Value == 0) return "";
     double b = intercept.HasValue ? intercept.Value : 0;
     return ((area.Value - b) / slope.Value).ToString("0.###", CultureInfo.InvariantCulture);
+  }
+
+  // Nearest SpecView sample. Blank beyond 30 seconds. Inlet flow is blank when it is negative or 9000 or higher.
+  static void BedAt(List<BedSample> bed, long t, out double? temp, out double? press, out double? inlet) {
+    temp = null;
+    press = null;
+    inlet = null;
+    long bestGap = long.MaxValue;
+    long bestT = 0;
+    bool have = false;
+    for (int j = 0; j < bed.Count; j++) {
+      long gap = Math.Abs(bed[j].T - t);
+      if (gap < bestGap || (gap == bestGap && bed[j].T < bestT)) {
+        bestGap = gap;
+        bestT = bed[j].T;
+        temp = bed[j].Temp;
+        press = bed[j].Press;
+        inlet = bed[j].Inlet;
+        have = true;
+      }
+    }
+    if (!have || bestGap > 30) { temp = null; press = null; inlet = null; }
+    else if (inlet.HasValue && (inlet.Value >= 9000 || inlet.Value < 0)) inlet = null;
   }
 
   class BedSample {
@@ -551,89 +723,50 @@ public static class Trend {
     public double? Inlet;
   }
 
+  static double FeedPct(string s) {
+    double v;
+    if (!double.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v)) return 0;
+    return v;
+  }
+
+  static double MolValue(string cell, ref bool any) {
+    double v;
+    if (!double.TryParse(cell, NumberStyles.Float, CultureInfo.InvariantCulture, out v)) return 0;
+    any = true;
+    return v;
+  }
+
   // SpecView stamps are already lab wall clock. TotalChrom acquisition is real UTC.
-  public static string BuildTable(string h2m, string h2b, string com, string cob, string co2m, string co2b, string ch4m, string ch4b) {
+  // Feed percents are CO, CO2, and CH4 on the calibration sheet. Inlet K is 1.
+  static List<string[]> TableRows(string h2m, string h2b, string com, string cob, string co2m, string co2b, string ch4m, string ch4b, string feedCo, string feedCo2, string feedCh4, out List<string> head) {
     double? mH2 = NumText(h2m), bH2 = NumText(h2b);
+    double yFeed = (FeedPct(feedCo) + FeedPct(feedCo2) + FeedPct(feedCh4)) / 100.0;
     double? mCo = NumText(com), bCo = NumText(cob);
     double? mCo2 = NumText(co2m), bCo2 = NumText(co2b);
     double? mCh4 = NumText(ch4m), bCh4 = NumText(ch4b);
 
-    string svDir = @"C:\LabDrop\SpecViewShareddata\Copy Logs";
-    string logPath = Path.Combine(svDir, "26_324.LOG");
+    string svDir = SpecViewDir();
     string livePath = Path.Combine(svDir, "livelog.csv");
-    string coleDir = @"C:\LabDrop\ColePalmerSharedData";
-    string gcDir = @"C:\LabDrop\TotalChromSharedData\CopyLogs";
+    string coleFolder = ColeDir();
+    string gcFolder = GcDir();
 
     var bed = new List<BedSample>();
-    if (File.Exists(logPath)) {
-      byte[] data = ReadShare(logPath);
-      int pos = 0;
-      while (pos + 8 <= data.Length && !(data[pos] == 0x09 && Valid(data, pos) > 0)) pos++;
-      var idName = new Dictionary<uint, string>();
-      while (pos + 8 <= data.Length && !BlockHeader(data, pos)) {
-        int length = Valid(data, pos);
-        if (length == 0) { pos++; continue; }
-        if (data[pos] == 0x09 && length >= 13) {
-          uint ident = U32(data, pos + 4);
-          string name = Encoding.GetEncoding(28591).GetString(data, pos + 12, length - 12).Split('\0')[0].Trim(' ', ';');
-          if (name.Length > 0 && !idName.ContainsKey(ident)) idName[ident] = name;
-        }
-        pos += length;
-      }
-      while (pos + 8 <= data.Length && BlockHeader(data, pos)) {
-        uint ts = U32(data, pos + 4);
-        pos += 8;
-        if (pos + 4 <= data.Length && data[pos] == 0x08 && data[pos + 1] == 0x00 && data[pos + 2] == 0x04 && data[pos + 3] == 0x00) pos += 4;
-        double? temp = null, press = null, inlet = null;
-        bool any = false;
-        while (pos < data.Length && !BlockHeader(data, pos)) {
-          int length = Valid(data, pos);
-          if (length == 0) { pos = data.Length; break; }
-          if (data[pos] == 0x03 && length >= 12) {
-            uint ident = U32(data, pos + 4);
-            string name;
-            if (idName.TryGetValue(ident, out name)) {
-              float value = BitConverter.ToSingle(data, pos + 8);
-              if (!float.IsNaN(value) && !float.IsInfinity(value)) {
-                if (name == "Loop1.Process Value") { temp = value; any = true; }
-                else if (name == "Loop4.Process Value") { press = value; any = true; }
-                else if (name == "AIs-.Module5 Inp2") { inlet = value; any = true; }
-              }
-            }
-          }
-          pos += length;
-        }
-        if (any) bed.Add(new BedSample { T = ts, Temp = temp, Press = press, Inlet = inlet });
-      }
+    foreach (var sample in ReadAllSpecViewLogs(svDir, false)) {
+      double? temp = null, press = null, inlet = null;
+      double? v;
+      bool any = false;
+      if (sample.Values.TryGetValue("Loop1.Process Value", out v) && v.HasValue) { temp = v; any = true; }
+      if (sample.Values.TryGetValue("Loop4.Process Value", out v) && v.HasValue) { press = v; any = true; }
+      if (sample.Values.TryGetValue("AIs-.Module5 Inp2", out v) && v.HasValue) { inlet = v; any = true; }
+      if (any) bed.Add(new BedSample { T = sample.T, Temp = temp, Press = press, Inlet = inlet });
     }
-    if (File.Exists(livePath)) {
-      long lastTs = bed.Count > 0 ? bed[bed.Count - 1].T : 0;
-      string text;
-      using (var fs = new FileStream(livePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-      using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
-      foreach (string rawLine in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) {
-        int at = rawLine.IndexOf("Time,", StringComparison.Ordinal);
-        if (at < 0) continue;
-        string line = at > 0 ? rawLine.Substring(at) : rawLine;
-        string[] p = line.Split(',');
-        if (p.Length < 4 || p[0] != "Time") continue;
-        DateTime clock;
-        if (!DateTime.TryParseExact(p[1], "HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)
-            && !DateTime.TryParseExact(p[1], "H:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, out clock)) continue;
-        var wall = new DateTime(2026, 11, 21, clock.Hour, clock.Minute, clock.Second);
-        long sec = (long)(wall - Epoch).TotalSeconds;
-        if (sec <= lastTs) continue;
-        double? temp = null, press = null, inlet = null;
-        for (int i = 2; i + 1 < p.Length; i += 2) {
-          double dv;
-          if (!double.TryParse(p[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out dv)) continue;
-          if (p[i] == "L1PV") temp = dv;
-          else if (p[i] == "L4PV") press = dv;
-          else if (p[i] == "Flow1") inlet = dv;
-        }
-        bed.Add(new BedSample { T = sec, Temp = temp, Press = press, Inlet = inlet });
-        lastTs = sec;
-      }
+    foreach (var row in ReadLiveTail(livePath, bed.Count > 0 ? bed[bed.Count - 1].T : 0)) {
+      double? temp = null, press = null, inlet = null;
+      double dv;
+      if (row.Values.TryGetValue("L1PV", out dv)) temp = dv;
+      if (row.Values.TryGetValue("L4PV", out dv)) press = dv;
+      if (row.Values.TryGetValue("Flow1", out dv)) inlet = dv;
+      bed.Add(new BedSample { T = row.T, Temp = temp, Press = press, Inlet = inlet });
     }
 
     var coleT = new List<long>();
@@ -641,48 +774,11 @@ public static class Trend {
     var coleC = new List<double>();
     var coleV = new List<double>();
     var coleM = new List<double>();
-    string coleFile = null;
-    if (Directory.Exists(coleDir)) {
-      foreach (string f in Directory.GetFiles(coleDir, "flowlog-2026-11-21*.log")) coleFile = f;
-    }
-    if (coleFile != null) {
-      string text;
-      using (var fs = new FileStream(coleFile, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-      using (var sr = new StreamReader(fs, Encoding.ASCII)) text = sr.ReadToEnd();
-      DateTime? t0 = null;
-      int seq = 0;
-      foreach (string line in text.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)) {
-        if (line.StartsWith("=~")) {
-          int mark = line.IndexOf("log ", StringComparison.Ordinal);
-          if (mark < 0) continue;
-          string[] bits = line.Substring(mark + 4).Split(new[] { ' ', '.', ':', '=' }, StringSplitOptions.RemoveEmptyEntries);
-          if (bits.Length >= 6) {
-            int y, mo, d, h, mi, s;
-            if (int.TryParse(bits[0], out y) && int.TryParse(bits[1], out mo) && int.TryParse(bits[2], out d)
-                && int.TryParse(bits[3], out h) && int.TryParse(bits[4], out mi) && int.TryParse(bits[5], out s)) {
-              t0 = new DateTime(y, mo, d, h, mi, s);
-            }
-          }
-          continue;
-        }
-        if (!t0.HasValue) continue;
-        string[] parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 5) continue;
-        if (!parts[parts.Length - 1].Equals("N2", StringComparison.OrdinalIgnoreCase)) continue;
-        double p, c, v, m;
-        if (!double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out p)) continue;
-        if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out c)) continue;
-        if (!double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out v)) continue;
-        if (!double.TryParse(parts[3], NumberStyles.Float, CultureInfo.InvariantCulture, out m)) continue;
-        coleT.Add((long)(t0.Value - Epoch).TotalSeconds + seq);
-        seq++;
-        coleP.Add(p); coleC.Add(c); coleV.Add(v); coleM.Add(m);
-      }
-    }
+    ReadColeLogs(coleFolder, coleT, coleP, coleC, coleV, coleM);
 
     var rows = new List<string[]>();
-    if (Directory.Exists(gcDir)) {
-      var files = new List<string>(Directory.GetFiles(gcDir, "datafile_*.rst"));
+    if (Directory.Exists(gcFolder)) {
+      var files = new List<string>(Directory.GetFiles(gcFolder, "datafile_*.rst"));
       files.Sort((a, b) => RunNo(Path.GetFileName(a)).CompareTo(RunNo(Path.GetFileName(b))));
       foreach (string f in files) {
         FileInfo info = new FileInfo(f);
@@ -718,23 +814,43 @@ public static class Trend {
           mCell = Num2(Median(winM));
         }
 
-        double? temp = null, press = null, inlet = null;
-        long bestGap = long.MaxValue;
-        long bestT = 0;
-        bool have = false;
-        for (int j = 0; j < bed.Count; j++) {
-          long gap = Math.Abs(bed[j].T - wall);
-          if (gap < bestGap || (gap == bestGap && bed[j].T < bestT)) {
-            bestGap = gap;
-            bestT = bed[j].T;
-            temp = bed[j].Temp;
-            press = bed[j].Press;
-            inlet = bed[j].Inlet;
-            have = true;
-          }
+        double? temp, press, inlet;
+        BedAt(bed, wall, out temp, out press, out inlet);
+
+        // 1 L from the reactor outlet to the GC detector. Transit time uses the volumetric flow written on this row.
+        string deadCell = "", transitCell = "", leftCell = "";
+        string tempExit = "", pressExit = "", inletExit = "";
+        double qShown;
+        if (double.TryParse(vCell, NumberStyles.Float, CultureInfo.InvariantCulture, out qShown) && qShown > 0) {
+          double transitMin = 1.0 / qShown;
+          long transitSec = (long)Math.Round(transitMin * 60.0, MidpointRounding.AwayFromZero);
+          long left = wall - transitSec;
+          double? tempX, pressX, inletX;
+          BedAt(bed, left, out tempX, out pressX, out inletX);
+          deadCell = "1";
+          transitCell = transitMin.ToString("0.000", CultureInfo.InvariantCulture);
+          leftCell = Epoch.AddSeconds(left).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
+          tempExit = Num2(tempX);
+          pressExit = Num2(pressX);
+          inletExit = Num2(inletX);
         }
-        if (!have || bestGap > 30) { temp = null; press = null; inlet = null; }
-        else if (inlet.HasValue && (inlet.Value >= 9000 || inlet.Value < 0)) inlet = null;
+
+        string molH2 = mH2.HasValue ? Mol(h2, mH2, bH2) : "";
+        string molCo = mCo.HasValue ? Mol(co, mCo, bCo) : "";
+        string molCo2 = mCo2.HasValue ? Mol(co2, mCo2, bCo2) : "";
+        string molCh4 = mCh4.HasValue ? Mol(ch4, mCh4, bCh4) : "";
+        bool anyCarbon = false;
+        double yCarbon = MolValue(molCo, ref anyCarbon) + MolValue(molCo2, ref anyCarbon) + MolValue(molCh4, ref anyCarbon);
+        string carbonOut = anyCarbon ? yCarbon.ToString("0.###", CultureInfo.InvariantCulture) : "";
+        string xCell = "";
+        double fInSccm, fOut;
+        if (anyCarbon && yFeed > 0
+            && double.TryParse(inletExit, NumberStyles.Float, CultureInfo.InvariantCulture, out fInSccm) && fInSccm > 0
+            && double.TryParse(mCell, NumberStyles.Float, CultureInfo.InvariantCulture, out fOut)) {
+          double fIn = fInSccm / 1000.0;
+          double x = 100.0 * (fIn * yFeed - fOut * yCarbon / 100.0) / (fIn * yFeed);
+          xCell = x.ToString("0.###", CultureInfo.InvariantCulture);
+        }
 
         string when = Epoch.AddSeconds(wall).ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture);
         string AreaH2 = h2.HasValue ? h2.Value.ToString("0", CultureInfo.InvariantCulture) : "0";
@@ -747,27 +863,39 @@ public static class Trend {
           AreaH2, AreaCo, AreaCo2, AreaCh4,
           pCell, cCell, vCell, mCell, nCole.ToString(CultureInfo.InvariantCulture),
           Num2(temp), Num2(press), Num2(inlet),
-          mH2.HasValue ? Mol(h2, mH2, bH2) : "",
-          mCo.HasValue ? Mol(co, mCo, bCo) : "",
-          mCo2.HasValue ? Mol(co2, mCo2, bCo2) : "",
-          mCh4.HasValue ? Mol(ch4, mCh4, bCh4) : ""
+          deadCell, transitCell, leftCell, tempExit, pressExit, inletExit,
+          molH2, molCo, molCo2, molCh4,
+          carbonOut, xCell
         });
       }
     }
 
-    var head = new List<string> {
+    head = new List<string> {
       "Injection Time [EST]", "file",
       "h2_area (counts)", "co_area (counts)", "co2_area (counts)", "ch4_area (counts)",
       "Product gas meter pressure (psia)", "Product gas meter temperature (°C)",
       "Product gas volumetric flow (LPM)", "Product gas mass flow (SLPM, N2)",
       "Product gas meter samples (count)",
-      "Reactor temperature (°C)", "Reactor pressure (psi)", "Inlet flow 1 (SCCM)"
+      "Reactor (°C)", "reactor pressure (psi)", "inlet flow (SCCM)",
+      "Dead volume (L)", "Transit time (min)", "Gas left reactor [EST]",
+      "Reactor at exit (°C)", "reactor pressure at exit (psi)", "inlet flow at exit (SCCM)"
     };
     head.Add(mH2.HasValue ? "H2 (mol%)" : "H2 area (counts)");
     head.Add(mCo.HasValue ? "CO (mol%)" : "CO area (counts)");
     head.Add(mCo2.HasValue ? "CO2 (mol%)" : "CO2 area (counts)");
     head.Add(mCh4.HasValue ? "CH4 (mol%)" : "CH4 area (counts)");
+    head.Add("Carbon out (mol%)");
+    head.Add("Carbon conversion (%)");
+    return rows;
+  }
 
+  public static string BuildTable(string h2m, string h2b, string com, string cob, string co2m, string co2b, string ch4m, string ch4b, string feedCo, string feedCo2, string feedCh4) {
+    List<string> head;
+    var rows = TableRows(h2m, h2b, com, cob, co2m, co2b, ch4m, ch4b, feedCo, feedCo2, feedCh4, out head);
+    return FormatTable(rows, head, NumText(h2m).HasValue, NumText(com).HasValue, NumText(co2m).HasValue, NumText(ch4m).HasValue);
+  }
+
+  static string FormatTable(List<string[]> rows, List<string> head, bool hasH2, bool hasCo, bool hasCo2, bool hasCh4) {
     var sb = new StringBuilder();
     for (int i = 0; i < head.Count; i++) {
       if (i > 0) sb.Append(',');
@@ -778,14 +906,68 @@ public static class Trend {
       for (int i = 0; i < row.Length; i++) {
         if (i > 0) sb.Append(',');
         string cell = row[i];
-        if (!mH2.HasValue && i == 14) cell = row[2];
-        if (!mCo.HasValue && i == 15) cell = row[3];
-        if (!mCo2.HasValue && i == 16) cell = row[4];
-        if (!mCh4.HasValue && i == 17) cell = row[5];
+        if (!hasH2 && i == 20) cell = row[2];
+        if (!hasCo && i == 21) cell = row[3];
+        if (!hasCo2 && i == 22) cell = row[4];
+        if (!hasCh4 && i == 23) cell = row[5];
         sb.Append(Csv(cell));
       }
       sb.Append("\r\n");
     }
+    return sb.ToString();
+  }
+
+  public static string BuildPoints(string h2m, string h2b, string com, string cob, string co2m, string co2b, string ch4m, string ch4b, string feedCo, string feedCo2, string feedCh4) {
+    List<string> head;
+    var rows = TableRows(h2m, h2b, com, cob, co2m, co2b, ch4m, ch4b, feedCo, feedCo2, feedCh4, out head);
+    int iWhen = head.IndexOf("Injection Time [EST]");
+    int iFile = head.IndexOf("file");
+    int iTemp = head.IndexOf("Reactor at exit (°C)");
+    int iPress = head.IndexOf("reactor pressure at exit (psi)");
+    int iFeed = head.IndexOf("inlet flow at exit (SCCM)");
+    int iH2 = head.IndexOf("H2 (mol%)");
+    int iCo = head.IndexOf("CO (mol%)");
+    int iCo2 = head.IndexOf("CO2 (mol%)");
+    int iCh4 = head.IndexOf("CH4 (mol%)");
+    int iX = head.IndexOf("Carbon conversion (%)");
+    int iMass = head.IndexOf("Product gas mass flow (SLPM, N2)");
+    int iCarbon = head.IndexOf("Carbon out (mol%)");
+    int iInletNow = head.IndexOf("inlet flow (SCCM)");
+    double yFeed = (FeedPct(feedCo) + FeedPct(feedCo2) + FeedPct(feedCh4)) / 100.0;
+    var sb = new StringBuilder();
+    sb.Append('[');
+    bool first = true;
+    foreach (var row in rows) {
+      if (iWhen < 0 || iFile < 0) continue;
+      if (!first) sb.Append(',');
+      first = false;
+      string inletCell = iFeed >= 0 ? row[iFeed] : "";
+      if (string.IsNullOrEmpty(inletCell) && iInletNow >= 0) inletCell = row[iInletNow];
+      string cin = "null";
+      string cout = "null";
+      double fInSccm, fOut, yCarbon;
+      if (yFeed > 0 && double.TryParse(inletCell, NumberStyles.Float, CultureInfo.InvariantCulture, out fInSccm) && fInSccm > 0)
+        cin = (fInSccm * yFeed).ToString("0.###", CultureInfo.InvariantCulture);
+      if (iMass >= 0 && iCarbon >= 0
+          && double.TryParse(row[iMass], NumberStyles.Float, CultureInfo.InvariantCulture, out fOut)
+          && double.TryParse(row[iCarbon], NumberStyles.Float, CultureInfo.InvariantCulture, out yCarbon))
+        cout = (fOut * 10.0 * yCarbon).ToString("0.###", CultureInfo.InvariantCulture);
+      string when = row[iWhen].Replace(" ", "T");
+      sb.Append("{\"when\":\"").Append(when).Append("\"");
+      sb.Append(",\"file\":\"").Append(row[iFile]).Append("\"");
+      sb.Append(",\"temp\":").Append(iTemp < 0 || string.IsNullOrEmpty(row[iTemp]) ? "null" : row[iTemp]);
+      sb.Append(",\"press\":").Append(iPress < 0 || string.IsNullOrEmpty(row[iPress]) ? "null" : row[iPress]);
+      sb.Append(",\"feed\":").Append(iFeed < 0 || string.IsNullOrEmpty(row[iFeed]) ? "null" : row[iFeed]);
+      sb.Append(",\"x\":").Append(iX < 0 || string.IsNullOrEmpty(row[iX]) ? "null" : row[iX]);
+      sb.Append(",\"h2\":").Append(iH2 < 0 || string.IsNullOrEmpty(row[iH2]) ? "null" : row[iH2]);
+      sb.Append(",\"co\":").Append(iCo < 0 || string.IsNullOrEmpty(row[iCo]) ? "null" : row[iCo]);
+      sb.Append(",\"co2\":").Append(iCo2 < 0 || string.IsNullOrEmpty(row[iCo2]) ? "null" : row[iCo2]);
+      sb.Append(",\"ch4\":").Append(iCh4 < 0 || string.IsNullOrEmpty(row[iCh4]) ? "null" : row[iCh4]);
+      sb.Append(",\"cin\":").Append(cin);
+      sb.Append(",\"cout\":").Append(cout);
+      sb.Append('}');
+    }
+    sb.Append(']');
     return sb.ToString();
   }
 }
