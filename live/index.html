@@ -696,7 +696,7 @@
     </div>
   </section>
   <section class="phone-pane" data-phone-pane="variables" hidden>
-    <p class="cal-note phone-note">Scroll for temperature, pressure, inlet flow, and outlet flow.</p>
+    <p class="cal-note phone-note">Scroll for temperature, pressure, inlet flow, and outlet flow. Each chart runs from the first injection through the end of the run.</p>
     <div id="phone-feeds" class="feed-scroller"></div>
   </section>
   <section class="phone-pane" data-phone-pane="table" hidden>
@@ -1131,6 +1131,17 @@ function syncSliders() {
   fill.style.left = (win0 / end * 100) + "%";
   fill.style.width = ((win1 - win0) / end * 100) + "%";
 }
+function feedBounds(start) {
+  let first = Infinity;
+  (data.injections || []).forEach((j) => {
+    if (j && j.t != null && j.t < first) first = j.t;
+  });
+  if (!isFinite(first)) return null;
+  const endMs = start + dataEndSec() * 1000;
+  let x0 = start + first * 1000;
+  if (endMs - x0 < 30000) x0 = Math.max(start, endMs - 30000);
+  return [x0, endMs];
+}
 function viewBounds() {
   const origin = parseLocal(data.start).getTime();
   const end = dataEndSec();
@@ -1299,6 +1310,15 @@ function draw() {
       drawBalance(ctx, w, h);
       return;
     }
+    let plot0 = x0, plot1 = x1, plotSpan = span;
+    if (section.closest("#phone-feeds")) {
+      const feed = feedBounds(start);
+      if (feed) {
+        plot0 = feed[0];
+        plot1 = feed[1];
+        plotSpan = Math.max(1, plot1 - plot0);
+      }
+    }
     const series = sectionSeries(section).filter((s) => !hidden.has(s.name));
     const pad = { l: 58, r: 16, t: 16, b: 28 };
     const iw = w - pad.l - pad.r;
@@ -1307,7 +1327,7 @@ function draw() {
     series.forEach((s) => {
       for (let i = 0; i < data.times.length; i++) {
         const ms = start + data.times[i] * 1000;
-        if (ms < x0 || ms > x1) continue;
+        if (ms < plot0 || ms > plot1) continue;
         const y = shown(s, s.y[i]);
         if (y == null) continue;
         if (y < lo) lo = y;
@@ -1318,7 +1338,7 @@ function draw() {
     if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
     const ypad = (hi - lo) * 0.06;
     lo -= ypad; hi += ypad;
-    const X = (ms) => pad.l + ((ms - x0) / span) * iw;
+    const X = (ms) => pad.l + ((ms - plot0) / plotSpan) * iw;
     const Y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * ih;
 
     ctx.strokeStyle = "#44403c";
@@ -1342,7 +1362,7 @@ function draw() {
     ctx.setLineDash([3, 3]);
     data.injections.forEach((inj) => {
       const ms = start + inj.t * 1000;
-      if (ms < x0 || ms > x1) return;
+      if (ms < plot0 || ms > plot1) return;
       const x = X(ms);
       ctx.beginPath();
       ctx.moveTo(x, pad.t);
@@ -1357,7 +1377,7 @@ function draw() {
       let lastLabel = -999;
       data.injections.forEach((inj) => {
         const ms = start + inj.t * 1000;
-        if (ms < x0 || ms > x1) return;
+        if (ms < plot0 || ms > plot1) return;
         const x = X(ms);
         if (x - lastLabel < 18) return;
         ctx.fillText(String(inj.n), x, pad.t + 11);
@@ -1378,7 +1398,7 @@ function draw() {
       for (let i = 0; i < data.times.length; i++) {
         const y = shown(s, s.y[i]);
         const ms = start + data.times[i] * 1000;
-        if (y == null || ms < x0 - span || ms > x1 + span) { pen = false; continue; }
+        if (y == null || ms < plot0 - plotSpan || ms > plot1 + plotSpan) { pen = false; continue; }
         const px = X(ms), py = Y(y);
         if (!pen) { ctx.moveTo(px, py); pen = true; }
         else ctx.lineTo(px, py);
@@ -1388,8 +1408,8 @@ function draw() {
       let tip = -1;
       for (let i = data.times.length - 1; i >= 0; i--) {
         const ms = start + data.times[i] * 1000;
-        if (ms > x1) continue;
-        if (ms < x0) break;
+        if (ms > plot1) continue;
+        if (ms < plot0) break;
         if (shown(s, s.y[i]) != null) { tip = i; break; }
       }
       if (tip >= 0) {
@@ -1406,11 +1426,11 @@ function draw() {
     ctx.textBaseline = "top";
     const ticks = 6;
     for (let g = 0; g <= ticks; g++) {
-      const ms = x0 + span * (g / ticks);
+      const ms = plot0 + plotSpan * (g / ticks);
       ctx.fillText(fmtTime(ms), X(ms), pad.t + ih + 8);
     }
 
-    if (hoverX != null && hoverX >= x0 && hoverX <= x1) {
+    if (hoverX != null && hoverX >= plot0 && hoverX <= plot1) {
       ctx.strokeStyle = "#fafaf9";
       ctx.lineWidth = 1;
       ctx.beginPath();
