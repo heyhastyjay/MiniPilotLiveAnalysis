@@ -111,7 +111,7 @@
     padding-top: 16px;
     border-top: 1px solid var(--line);
   }
-  #cal h2:first-child, #info h2:first-child { margin-top: 4px; padding-top: 0; border-top: 0; }
+  #cal h2:first-of-type, #info h2:first-child { margin-top: 4px; padding-top: 0; border-top: 0; }
   #info { max-width: 1280px; }
   .cal-note { color: var(--muted); margin: 0 0 10px; }
   .path-row {
@@ -305,6 +305,7 @@
   .swatch { width: 16px; height: 0; border-top: 2px solid; display: inline-block; }
   .legend span { display: inline-flex; align-items: center; gap: 6px; color: var(--ink); }
   .exclude-row { display: flex; align-items: center; gap: 10px; margin: 14px 0 8px; color: var(--muted); font-size: 13px; }
+  .ding-row { margin-top: 0; color: var(--ink); }
   .exclude-row input[type="range"] {
     -webkit-appearance: none;
     appearance: none;
@@ -801,6 +802,11 @@
   <p class="cal-note" id="balance-readout">Move across the graph to read an injection.</p>
 </section>
 <section id="cal" hidden>
+  <div class="exclude-row ding-row">
+    <span>System ding</span>
+    <input id="ding-toggle" type="range" min="0" max="1" step="1" value="1" aria-label="System ding when results come in">
+  </div>
+  <p class="cal-note">Plays when a new result comes in.</p>
   <h2>Feed gas composition</h2>
   <p class="cal-note">Volume %. The total is checked against 100%.</p>
   <div class="cal-grid k">
@@ -1025,7 +1031,10 @@ if (PUBLIC) {
   document.querySelectorAll("img[src^='/']").forEach((img) => {
     img.src = ROOT + img.getAttribute("src");
   });
-  document.querySelectorAll("#cal input, #cal textarea").forEach((el) => { el.readOnly = true; });
+  document.querySelectorAll("#cal input, #cal textarea").forEach((el) => {
+    if (el.id === "ding-toggle") return;
+    el.readOnly = true;
+  });
   document.querySelectorAll("#cal select").forEach((el) => { el.disabled = true; });
 }
 const GROUPS = [
@@ -1769,7 +1778,12 @@ function unlockAudio() {
   if (audioCtx.state === "suspended") audioCtx.resume();
 }
 
+function dingOn() {
+  try { return localStorage.getItem("minipilot-ding") !== "0"; } catch (err) { return true; }
+}
+
 function playDing() {
+  if (!dingOn()) return;
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return;
   if (!audioCtx) audioCtx = new Ctx();
@@ -1831,6 +1845,13 @@ function celebrateFresh(fresh) {
 }
 
 document.addEventListener("pointerdown", unlockAudio);
+const dingToggle = document.getElementById("ding-toggle");
+if (dingToggle) {
+  dingToggle.value = dingOn() ? "1" : "0";
+  dingToggle.addEventListener("input", () => {
+    try { localStorage.setItem("minipilot-ding", dingToggle.value === "1" ? "1" : "0"); } catch (err) { /* private mode */ }
+  });
+}
 
 function showExcluded() {
   const el = document.getElementById("show-excluded");
