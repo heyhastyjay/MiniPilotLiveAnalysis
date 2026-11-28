@@ -69,8 +69,6 @@
     border-color: var(--ink);
   }
   .view-mode-toggle svg { display: block; }
-  .connect-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 8px; }
-  #connect-status { color: var(--muted); font-size: 12px; max-width: 460px; }
   .public-view .lab-only { display: none !important; }
   .public-view #cal button { display: none; }
   .tabs { display: flex; gap: 6px; padding: 0 28px 8px; }
@@ -641,10 +639,6 @@
   <div class="titleblock">
     <h1>Mini pilot process trend</h1>
     <div class="sub" id="sub"><span class="live-dot" hidden></span><span id="sub-text">Loading today’s run…</span></div>
-    <div class="connect-row lab-only" id="connect-row">
-      <button type="button" id="connect">Publish</button>
-      <span id="connect-status">Checking the link to jayhasty.com…</span>
-    </div>
   </div>
   <div class="head-end">
     <div class="view-mode-toggle" id="view-mode" aria-label="Desktop or mobile view">
@@ -1020,9 +1014,10 @@
 </div>
 <p class="credit">Developed by Dr. Julia Hasty for the Institute of Gas Innovation and Technology at the Advanced Energy Research and Technology Center. 2026</p>
 <script>
+const PUBLIC_HOSTS = ["minipilot.jayhasty.com"];
 const PUBLIC_ROOTS = ["/minipilotlive", "/SBU-IGIT-minipilot"];
 const ROOT = PUBLIC_ROOTS.find((p) => location.pathname === p || location.pathname.startsWith(p + "/")) || "";
-const PUBLIC = ROOT !== "";
+const PUBLIC = ROOT !== "" || PUBLIC_HOSTS.includes(location.hostname);
 let liveLink = null;
 let appliedVarsSig = "";
 if (PUBLIC) {
@@ -2533,7 +2528,6 @@ async function refreshLocal() {
   data = await res.json();
   await refreshPoints();
   drawSnapshot();
-  await refreshPublishStatus();
 }
 async function refresh() {
   try {
@@ -3329,26 +3323,6 @@ function mountDevNotes() {
 
   hydrateFromServer();
 }
-function paintConnect(st) {
-  const btn = document.getElementById("connect");
-  const note = document.getElementById("connect-status");
-  if (!btn || !note || !st) return;
-  btn.classList.toggle("on", !!st.enabled);
-  btn.textContent = st.enabled ? "Publishing" : "Publish";
-  if (!st.configured) {
-    note.textContent = "Copy live/publish.json onto this computer, next to server.ps1.";
-    return;
-  }
-  if (st.lastError) note.textContent = st.lastError;
-  else if (st.enabled) note.textContent = st.lastAt ? ("Publishing to jayhasty.com/minipilotlive · " + st.lastAt) : "Publishing to jayhasty.com/minipilotlive";
-  else note.textContent = "Off. The website keeps the last snapshot.";
-}
-async function refreshPublishStatus() {
-  try {
-    const res = await fetch("/api/publish", { cache: "no-store" });
-    if (res.ok) paintConnect(await res.json());
-  } catch (err) { /* the lab page is not open on this server */ }
-}
 if (PUBLIC) {
   applyMobile();
   refresh();
@@ -3356,22 +3330,6 @@ if (PUBLIC) {
 } else {
   mountDevNotes();
   loadPaths().catch((err) => pathStatus(String(err)));
-  document.getElementById("connect").addEventListener("click", async () => {
-    const btn = document.getElementById("connect");
-    const turningOn = !btn.classList.contains("on");
-    const res = await fetch("/api/publish", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ enabled: turningOn, vars: collectVars() })
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      document.getElementById("connect-status").textContent = body.error || "Could not publish";
-      return;
-    }
-    paintConnect(body);
-  });
-  refreshPublishStatus();
   refresh();
   setInterval(refresh, 3000);
 }

@@ -108,7 +108,7 @@ $script:pub = [hashtable]::Synchronized(@{
   Kick = $false
   Disconnect = $false
   VarsJson = ''
-  Url = 'https://jayhasty.com/minipilotlive/api/ingest'
+  Url = 'https://minipilot.jayhasty.com/api/ingest'
   Token = ''
   LastError = ''
   LastAt = ''
@@ -150,6 +150,12 @@ function Publish-Status {
 }
 Import-PublishConfig
 Save-Locations
+if (-not [string]::IsNullOrWhiteSpace([string]$script:pub.Token)) {
+  $script:pub.Enabled = $true
+  $script:pub.Kick = $true
+} else {
+  $script:pub.LastError = "Copy live/publish.json onto this computer, next to server.ps1."
+}
 
 $publishRs = [runspacefactory]::CreateRunspace()
 $publishRs.Open()
